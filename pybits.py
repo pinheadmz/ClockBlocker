@@ -29,7 +29,6 @@ latest = True
 blockTimes =[]
 TIMELIMIT = 60 * 60
 while elapsed <= TIMELIMIT and len(blockData) > 0:
-	print blockData.keys()
 	key = max(blockData.keys())
 	block = blockData[key]
 	if latest:	
