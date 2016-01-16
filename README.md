@@ -1,5 +1,8 @@
-bitcoinAuth.py should contain:
+requires python-bitcoinrpc https://github.com/jgarzik/python-bitcoinrpc
 
-    USER = "your RPC user name"
+add this line to bitcoin.conf:
+`blocknotify=python /home/pi/pybits/block.py %s`
 
-    PW = "your RPC password"
+create a file called bitcoinAuth.py with:
+`USER = "your RPC user name"`
+`PW = "your RPC password"`
