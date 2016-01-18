@@ -44,14 +44,41 @@ while elapsed <= TIMELIMIT and len(blockData) > 0:
 print
 print "Recent block times in minutes ago:", blockTimes
 print
+
+for b in blockTimes:
+	bar = ""
+	bar = ("|" * b) + " " + str(b)
+	print bar
+
+print
 print "Best block hash: ", latestHash
 print
 print "Best block height: ", latestHeight
 print
-print "Blocks since last diff adj:", int(latestHeight)%2016, "blocks ago at block:", int(latestHeight) - (int(latestHeight)%2016)
+print "Blocks until next diff adj:", 2016-int(latestHeight)%2016
+print "Last adj at block:", int(latestHeight) - (int(latestHeight)%2016)
+print
+
+pctSince =  int((int(latestHeight)%2016 / float(2016)) * 100)
+pctUntil = 100 - pctSince
+print "[" + ("+" * pctSince) + ("-" * pctUntil) + "]"
+
+print
+print "Blocks until next subsidy halvening:", 210000 - int(latestHeight)%210000
+print
+
+pctSinceB = int(int(latestHeight)%210000 / float(210000) * 100)
+pctUntilB = 100 - pctSinceB
+
+print "[" + ("+" * pctSinceB) + ("-" * pctUntilB) + "]"
 print
 print "Mempool TX's:", numTx, "memory:", mempoolSize, "MB"
 print
+print "Bytes:", "." * (mempoolInfo['bytes']/1000) + " " + str(mempoolInfo['bytes'])
+print
+print "Tx's:", "*" * numTx + " " + str(numTx)
+print
+
 
 # cut block hash into 16x16 bits - 16 bits is 4 hex characters
 for i in range(0,16):
@@ -61,6 +88,7 @@ for i in range(0,16):
 	print chunkBinary
 
 # print total processing time
+print
 print "Running time: ",  datetime.utcnow() - startTime
 
 
