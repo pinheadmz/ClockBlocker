@@ -88,7 +88,6 @@ while True:
 				r = int(latestHash[26:28], 16)%100
 				g = int(latestHash[28:30], 16)%100
 				b = int(latestHash[30:32], 16)%100
-			print r, g, b
 			matrix.SetPixel(i,ind,r,g,b)
 	
 	time.sleep(1)
