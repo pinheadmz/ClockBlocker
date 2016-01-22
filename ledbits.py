@@ -1,5 +1,10 @@
-# for clear screen
-import os
+#!/usr/bin/env python
+
+
+from rgbmatrix import Adafruit_RGBmatrix
+
+# Rows and chain length are both required parameters:
+matrix = Adafruit_RGBmatrix(32, 1)
 
 # to measure processing time and elapsed block time
 from datetime import datetime
@@ -8,6 +13,9 @@ startTime = datetime.utcnow()
 # for sleep
 import time
 
+# for clear screen
+import os
+
 # for reading JSON block info
 import json
 
@@ -15,44 +23,44 @@ import json
 import bitcoinAuth
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
-mempoolInfo = rpc_connection.getmempoolinfo()
-numTx = mempoolInfo['size']
-mempoolSize = mempoolInfo['bytes']/float(1000000)
 
-# load recent block info from file
-f = open('block_list.txt','r')
-d = f.read()
-blockData = json.loads(d)
-f.close()
+while True:	
+	mempoolInfo = rpc_connection.getmempoolinfo()
+	numTx = mempoolInfo['size']
+	mempoolSize = mempoolInfo['bytes']/float(1000000)
+	
+	# load recent block info from file
+	f = open('block_list.txt','r')
+	d = f.read()
+	blockData = json.loads(d)
+	f.close()
+	
+	# find the blocks that happened in past n hours
+	now = datetime.utcnow()
+	elapsed=120
+	latest = True
+	blockTimes =[]
+	TIMELIMIT = 60 * 60
+	while elapsed <= TIMELIMIT and len(blockData) > 0:
+		key = max(blockData.keys())
+		block = blockData[key]
+		if latest:	
+			latest = False
+			latestHash = block['hash']
+			latestHeight = key
+		blockTime = datetime.strptime(block['time'], '%B %d %Y - %H:%M:%S')
+		elapsed = int((now - blockTime).total_seconds())
+		if (elapsed <= TIMELIMIT):
+			blockTimes.append(elapsed/10)
+		del blockData[key]
 
-# find the blocks that happened in past n hours
-now = datetime.utcnow()
-elapsed=120
-latest = True
-blockTimes =[]
-TIMELIMIT = 60 * 60
-while elapsed <= TIMELIMIT and len(blockData) > 0:
-	key = max(blockData.keys())
-	block = blockData[key]
-	if latest:	
-		latest = False
-		latestHash = block['hash']
-		latestHeight = key
-	blockTime = datetime.strptime(block['time'], '%B %d %Y - %H:%M:%S')
-	elapsed = int((now - blockTime).total_seconds())
-	if (elapsed <= TIMELIMIT):
-		blockTimes.append(elapsed/60)
-	del blockData[key]
+	print blockTimes
+	for i, b in enumerate(blockTimes):
+		for x in range(b):
+			matrix.SetPixel(i*2, x%31, 255,0,255)
+			print i*2, x%31, b
+	time.sleep(0.5)
 
-os.system('clear')
-print
-print "Recent block times in minutes ago:", blockTimes
-print
-
-for b in blockTimes:
-	bar = ""
-	bar = ("|" * b) + " " + str(b)
-	print bar
 
 print
 print "Best block hash: ", latestHash
@@ -82,7 +90,6 @@ print "Bytes:", "." * (mempoolInfo['bytes']/10000) + " " + str(mempoolInfo['byte
 print
 print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
 print
-
 
 # cut block hash into 16x16 bits - 16 bits is 4 hex characters
 for i in range(0,16):
