@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-
+import random
 from rgbmatrix import Adafruit_RGBmatrix
 
 # Rows and chain length are both required parameters:
@@ -51,15 +51,37 @@ while True:
 		blockTime = datetime.strptime(block['time'], '%B %d %Y - %H:%M:%S')
 		elapsed = int((now - blockTime).total_seconds())
 		if (elapsed <= TIMELIMIT):
-			blockTimes.append(elapsed/10)
+			blockTimes.append(elapsed/60)
 		del blockData[key]
 
-	print blockTimes
-	for i, b in enumerate(blockTimes):
-		for x in range(b):
-			matrix.SetPixel(i*2, x%31, 255,0,255)
-			print i*2, x%31, b
-	time.sleep(0.5)
+	#print blockTimes
+	for num, ti in enumerate(blockTimes):
+		r = random.randint(0,255)
+		g = random.randint(0,255)
+		b = random.randint(0,255)
+		row = 31 - (ti/31)
+		col = 31 - (ti%31)
+		matrix.SetPixel(row,col,r,g,b)
+		
+
+
+	for i in range(0,16):  
+        	index = i*4
+        	chunk = latestHash[index:index+4]
+        	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
+		for ind, bit in enumerate(chunkBinary):		
+			if bit == "1":
+				r = int(latestHash[20:22], 16)
+				g = int(latestHash[22:24], 16)
+				b = int(latestHash[24:26], 16)
+			else:
+				r = int(latestHash[26:28], 16)
+				g = int(latestHash[28:30], 16)
+				b = int(latestHash[30:32], 16)
+			
+			matrix.SetPixel(i,ind,r,g,b)
+	
+	time.sleep(1)
 
 
 print
