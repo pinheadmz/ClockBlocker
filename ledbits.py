@@ -55,15 +55,24 @@ while True:
 		del blockData[key]
 
 	#print blockTimes
-	for num, ti in enumerate(blockTimes):
-		r = random.randint(0,255)
-		g = random.randint(0,255)
-		b = random.randint(0,255)
-		row = 31 - (ti/31)
-		col = 31 - (ti%31)
-		matrix.SetPixel(row,col,r,g,b)
-		
+	os.system('clear')
 
+	matrix.Clear()
+	
+	for num, ti in enumerate(blockTimes):
+		#r = random.randint(0,255)
+		#g = random.randint(0,255)
+		#b = random.randint(0,255)
+		r = ((num*100)+100)%256
+		g = ((num*50)+50)%256
+		b = ((num*25)+25)%256
+		
+		row = 32 - ((ti%16)*2)
+		col = 31 - ((ti/16)*2)
+		matrix.SetPixel(row, col, r,g,b)
+		matrix.SetPixel(row-1, col, r,g,b)
+		matrix.SetPixel(row, col-1, r,g,b)
+		matrix.SetPixel(row-1, col-1, r,g,b)
 
 	for i in range(0,16):  
         	index = i*4
@@ -71,14 +80,15 @@ while True:
         	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
 		for ind, bit in enumerate(chunkBinary):		
 			if bit == "1":
-				r = int(latestHash[20:22], 16)
-				g = int(latestHash[22:24], 16)
-				b = int(latestHash[24:26], 16)
+				r = int(latestHash[20:22], 16)%128
+				g = int(latestHash[22:24], 16)%128
+				b = int(latestHash[24:26], 16)%128
+
 			else:
-				r = int(latestHash[26:28], 16)
-				g = int(latestHash[28:30], 16)
-				b = int(latestHash[30:32], 16)
-			
+				r = int(latestHash[26:28], 16)%100
+				g = int(latestHash[28:30], 16)%100
+				b = int(latestHash[30:32], 16)%100
+			print r, g, b
 			matrix.SetPixel(i,ind,r,g,b)
 	
 	time.sleep(1)
