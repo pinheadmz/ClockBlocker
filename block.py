@@ -1,3 +1,5 @@
+filepath = '/home/pi/pybits/block_list.txt'
+
 # get block hash from bitcoind command
 from sys import argv
 script, hash = argv
@@ -14,9 +16,9 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
 
 #open file or create new
-f = open('block_list.txt','a')
+f = open(filepath,'a')
 f.close()
-f = open('block_list.txt','r+')
+f = open(filepath,'r+')
 
 # read data from file
 data = f.read()
