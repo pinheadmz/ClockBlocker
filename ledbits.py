@@ -70,7 +70,7 @@ while True:
 		g = int(ti[1][22:24], 16)		
 		b = int(ti[1][14:16], 16)
 		ti = ti[0]
-		row = 32 - ((ti%16)*2)
+		row = 31 - ((ti%16)*2)
 		col = 31 - ((ti/16)*2)
 		matrix.SetPixel(row, col, r,g,b)
 		matrix.SetPixel(row-1, col, r,g,b)
