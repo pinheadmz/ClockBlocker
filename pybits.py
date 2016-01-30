@@ -82,7 +82,7 @@ print "Bytes:", "." * (mempoolInfo['bytes']/10000) + " " + str(mempoolInfo['byte
 print
 print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
 print
-
+	
 
 # cut block hash into 16x16 bits - 16 bits is 4 hex characters
 for i in range(0,16):

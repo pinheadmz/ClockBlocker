@@ -51,7 +51,7 @@ while True:
 		blockTime = datetime.strptime(block['time'], '%B %d %Y - %H:%M:%S')
 		elapsed = int((now - blockTime).total_seconds())
 		if (elapsed <= TIMELIMIT):
-			blockTimes.append(elapsed/60)
+			blockTimes.append((elapsed/60,block['hash'] ))
 		del blockData[key]
 
 	#print blockTimes
@@ -63,10 +63,13 @@ while True:
 		#r = random.randint(0,255)
 		#g = random.randint(0,255)
 		#b = random.randint(0,255)
-		r = ((num*100)+100)%256
-		g = ((num*50)+50)%256
-		b = ((num*25)+25)%256
-		
+		#r = ((num*100)+100)%256
+		#g = ((num*50)+50)%256
+		#b = ((num*25)+25)%256
+		r = int(ti[1][20:22], 16)
+		g = int(ti[1][22:24], 16)		
+		b = int(ti[1][14:16], 16)
+		ti = ti[0]
 		row = 32 - ((ti%16)*2)
 		col = 31 - ((ti/16)*2)
 		matrix.SetPixel(row, col, r,g,b)
@@ -89,38 +92,33 @@ while True:
 				g = int(latestHash[28:30], 16)%100
 				b = int(latestHash[30:32], 16)%100
 			matrix.SetPixel(i,ind,r,g,b)
-	
+
+	print
+	print "Best block hash: ", latestHash
+	print
+	print "Best block height: ", latestHeight
+	print
+	print "Blocks until next diff adj:", 2016-int(latestHeight)%2016
+	print "Last adj at block:", int(latestHeight) - (int(latestHeight)%2016)
+	print
+	pctSince =  int((int(latestHeight)%2016 / float(2016)) * 100)
+	pctUntil = 100 - pctSince
+	print "[" + ("+" * pctSince) + ("-" * pctUntil) + "]"
+	print
+	print "Blocks until next subsidy halvening:", 210000 - int(latestHeight)%210000
+	print
+	pctSinceB = int(int(latestHeight)%210000 / float(210000) * 100)
+	pctUntilB = 100 - pctSinceB
+	print "[" + ("+" * pctSinceB) + ("-" * pctUntilB) + "]"
+	print
+	print "Mempool TX's:", numTx, "memory:", mempoolSize, "MB"	
+	print
+	print "Bytes:", "." * (mempoolInfo['bytes']/10000) + " " + str(mempoolInfo['bytes'])
+	print
+	print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
+	print
+
 	time.sleep(1)
-
-
-print
-print "Best block hash: ", latestHash
-print
-print "Best block height: ", latestHeight
-print
-print "Blocks until next diff adj:", 2016-int(latestHeight)%2016
-print "Last adj at block:", int(latestHeight) - (int(latestHeight)%2016)
-print
-
-pctSince =  int((int(latestHeight)%2016 / float(2016)) * 100)
-pctUntil = 100 - pctSince
-print "[" + ("+" * pctSince) + ("-" * pctUntil) + "]"
-
-print
-print "Blocks until next subsidy halvening:", 210000 - int(latestHeight)%210000
-print
-
-pctSinceB = int(int(latestHeight)%210000 / float(210000) * 100)
-pctUntilB = 100 - pctSinceB
-
-print "[" + ("+" * pctSinceB) + ("-" * pctUntilB) + "]"
-print
-print "Mempool TX's:", numTx, "memory:", mempoolSize, "MB"
-print
-print "Bytes:", "." * (mempoolInfo['bytes']/10000) + " " + str(mempoolInfo['bytes'])
-print
-print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
-print
 
 # cut block hash into 16x16 bits - 16 bits is 4 hex characters
 for i in range(0,16):
