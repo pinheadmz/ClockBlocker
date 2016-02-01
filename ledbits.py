@@ -1,103 +1,143 @@
 #!/usr/bin/env python
 
+import time
+import os
+import json
 import random
+import bitcoinAuth
+
+from datetime import datetime
+from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from rgbmatrix import Adafruit_RGBmatrix
 
-# Rows and chain length are both required parameters:
+
+# brightness limits for random colors
+DIM_MAX = 255
+DIM_MED = 128
+DIM_LOW = 100
+
+# amount of time each LED row represents in seconds for block icons
+TIMESCALE = 60
+
+# default location of block hash on grid
+HASH_X = 8
+HASH_Y = 16
+
+# size of block icons (squared)
+ICONSIZE = 2
+
+# refresh rate in seconds
+REFRESH = 1
+
+
+# init LED grid, rows and chain length are both required parameters:
 matrix = Adafruit_RGBmatrix(32, 1)
 
-# to measure processing time and elapsed block time
-from datetime import datetime
-startTime = datetime.utcnow()
-
-# for sleep
-import time
-
-# for clear screen
-import os
-
-# for reading JSON block info
-import json
-
-# initialize bitcoin RPC connection and gather mempool info
-import bitcoinAuth
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+# init bitcoin RPC connection
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
 
+
+# draws a block hash on the grid from point (x, y)
+def drawHash(hash, x, y):
+	# keep the whole thing on the grid
+	if x < 0 or x > 16 or y < 16 or y > 31:
+		return False
+
+	# choose colors from block hash least sig bits
+	r1 = int(hash[-2:], 16) % DIM_MED + 100
+	g1 = int(hash[-4:-2], 16) % DIM_MED + 100
+	b1 = int(hash[-6:-4], 16) % DIM_MED + 100
+	r0 = int(hash[-8:-6], 16) % DIM_MED
+	g0 = int(hash[-10:-8], 16) % DIM_MED
+	b0 = int(hash[-12:-10], 16) % DIM_MED
+
+	# iterate through hash string and set pixels
+	for row in range(0,16):  
+        	index = row * 4
+        	chunk = hash[index:index+4]
+        	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
+		for col, bit in enumerate(chunkBinary):		
+			if bit == "1":
+				matrix.SetPixel(y - row, x + col, r1, g1, b1)
+			else:
+				matrix.SetPixel(y - row, x + col, r0, g0, b0)
+
+	return True
+
+
+# draw block icons around outside perimeter of LED grid
+def drawBlocks(recentBlocks, size):
+	# size of icons must be at least 1x1 pixels
+	size = size if size > 1 else 1
+	
+	for num, block in enumerate(recentBlocks):
+		hash = block['hash']
+		time = block['time']
+		
+		# choose color from block hash least sig bits
+		r = int(hash[-2:], 16)
+		g = int(hash[-4:-2], 16)
+		b = int(hash[-6:-4], 16)
+		
+		# figure out where this block goes around the edge of grid
+		t = time / TIMESCALE
+		section = t / (33 - size)
+		inc = t % (33 - size)
+
+		# draw icon
+		if section == 0:
+			for x in range(size):
+				for y in range(size):
+					matrix.SetPixel(inc + x, 0 + y, r, g, b)
+		elif section == 1:
+			for x in range(size):
+				for y in range(size):
+					matrix.SetPixel(31 - x, inc + y, r, g, b)
+		elif secion == 2:
+			for x in range(size):
+				for y in range(size):
+					matrix.SetPixel(31 - inc - x, 31 - y, r, g, b)
+
+
 while True:	
+	# connect to node and get current mem pool size
 	mempoolInfo = rpc_connection.getmempoolinfo()
 	numTx = mempoolInfo['size']
-	mempoolSize = mempoolInfo['bytes']/float(1000000)
+	mempoolSize = mempoolInfo['bytes']
 	
-	# load recent block info from file
+	# load recent block info from file created by blocks.py
 	f = open('block_list.txt','r')
 	d = f.read()
 	blockData = json.loads(d)
 	f.close()
 	
-	# find the blocks that happened in past n hours
+	# load info about as many recent blocks as can fit on grid given TIMESCALE and ICONSIZE
 	now = datetime.utcnow()
-	elapsed=120
-	latest = True
-	blockTimes =[]
-	TIMELIMIT = 60 * 60
-	while elapsed <= TIMELIMIT and len(blockData) > 0:
+	timeLimit = TIMESCALE * (33 - ICONSIZE) * 3
+	recentBlocks = []
+	elapsed = 0
+	while elapsed <= timeLimit and len(blockData) > 0:
 		key = max(blockData.keys())
 		block = blockData[key]
-		if latest:	
-			latest = False
-			latestHash = block['hash']
-			latestHeight = key
 		blockTime = datetime.strptime(block['time'], '%B %d %Y - %H:%M:%S')
 		elapsed = int((now - blockTime).total_seconds())
-		if (elapsed <= TIMELIMIT):
-			blockTimes.append((elapsed/60,block['hash'] ))
+		if (elapsed <= timeLimit):
+			recentBlocks.append({'time': elapsed, 'hash': block['hash'], 'index': key})
 		del blockData[key]
+	latestHash = recentBlocks[0]['hash']
+	latestHeight = recentBlocks[0]['index']
 
-	#print blockTimes
-	os.system('clear')
-
+	#clear LED grid
 	matrix.Clear()
+
+	# draw latest block hash, bottom center
+	drawHash(latestHash, HASH_X, HASH_Y)
 	
-	for num, ti in enumerate(blockTimes):
-		#r = random.randint(0,255)
-		#g = random.randint(0,255)
-		#b = random.randint(0,255)
-		#r = ((num*100)+100)%256
-		#g = ((num*50)+50)%256
-		#b = ((num*25)+25)%256
-		r = int(ti[1][20:22], 16)
-		g = int(ti[1][22:24], 16)		
-		b = int(ti[1][24:16], 16)
-		ti = ti[0]
-		row = 31 - ((ti%16)*2)
-		col = 31 - ((ti/16)*2)
-		matrix.SetPixel(row, col, r,g,b)
-		matrix.SetPixel(row-1, col, r,g,b)
-		matrix.SetPixel(row, col-1, r,g,b)
-		matrix.SetPixel(row-1, col-1, r,g,b)
-
-	for i in range(0,16):  
-        	index = i*4
-        	chunk = latestHash[index:index+4]
-        	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
-		for ind, bit in enumerate(chunkBinary):		
-			if bit == "1":
-				r = int(latestHash[20:22], 16)%128
-				g = int(latestHash[22:24], 16)%128
-				b = int(latestHash[24:26], 16)%128
-
-			else:
-				r = int(latestHash[26:28], 16)%100
-				g = int(latestHash[28:30], 16)%100
-				b = int(latestHash[30:32], 16)%100
-			matrix.SetPixel(i,ind,r,g,b)
-
-	print
-	print "Best block hash: ", latestHash
-	print
-	print "Best block height: ", latestHeight
-	print
+	# draw block icons
+	drawBlocks(recentBlocks, ICONSIZE)
+	
+	# print additional stats to console
+	os.system('clear')
 	print "Blocks until next diff adj:", 2016-int(latestHeight)%2016
 	print "Last adj at block:", int(latestHeight) - (int(latestHeight)%2016)
 	print
@@ -118,17 +158,4 @@ while True:
 	print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
 	print
 
-	time.sleep(1)
-
-# cut block hash into 16x16 bits - 16 bits is 4 hex characters
-for i in range(0,16):
-	index = i*4
-	chunk = latestHash[index:index+4]
-	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
-	print chunkBinary
-
-# print total processing time
-print
-print "Running time: ",  datetime.utcnow() - startTime
-
-
+	time.sleep(REFRESH)
