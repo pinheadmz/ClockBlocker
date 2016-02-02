@@ -21,10 +21,10 @@ TIMESCALE = 60
 
 # default location of block hash on grid
 HASH_X = 8
-HASH_Y = 16
+HASH_Y = 15
 
 # size of block icons (squared)
-ICONSIZE = 2
+ICONSIZE = 4
 
 # refresh rate in seconds
 REFRESH = 1
@@ -40,7 +40,7 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 # draws a block hash on the grid from point (x, y)
 def drawHash(hash, x, y):
 	# keep the whole thing on the grid
-	if x < 0 or x > 16 or y < 16 or y > 31:
+	if x < 0 or x > 16 or y < 15 or y > 31:
 		return False
 
 	# choose colors from block hash least sig bits
@@ -93,7 +93,7 @@ def drawBlocks(recentBlocks, size):
 			for x in range(size):
 				for y in range(size):
 					matrix.SetPixel(31 - x, inc + y, r, g, b)
-		elif secion == 2:
+		elif section == 2:
 			for x in range(size):
 				for y in range(size):
 					matrix.SetPixel(31 - inc - x, 31 - y, r, g, b)
