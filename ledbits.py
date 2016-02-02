@@ -17,7 +17,7 @@ DIM_MED = 128
 DIM_LOW = 100
 
 # amount of time each LED row represents in seconds for block icons
-TIMESCALE = 60
+TIMESCALE = 1
 
 # default location of block hash on grid
 HASH_X = 8
@@ -98,7 +98,8 @@ def drawBlocks(recentBlocks, size):
 				for y in range(size):
 					matrix.SetPixel(31 - inc - x, 31 - y, r, g, b)
 
-
+# on startup if recent blocks are all out of range, default to genesis block :-)
+backupBlock = {'time': 99999999, 'hash': '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'index': 0}
 while True:	
 	# connect to node and get current mem pool size
 	mempoolInfo = rpc_connection.getmempoolinfo()
@@ -124,8 +125,13 @@ while True:
 		if (elapsed <= timeLimit):
 			recentBlocks.append({'time': elapsed, 'hash': block['hash'], 'index': key})
 		del blockData[key]
-	latestHash = recentBlocks[0]['hash']
-	latestHeight = recentBlocks[0]['index']
+	if len(recentBlocks) > 0:
+		latestHash = recentBlocks[0]['hash']
+		latestHeight = recentBlocks[0]['index']
+		backupBlock = recentBlocks[0]
+	else:
+		latestHash = backupBlock['hash']
+		latestHeight = backupBlock['index']
 
 	#clear LED grid
 	matrix.Clear()
