@@ -10,6 +10,7 @@ from datetime import datetime
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from rgbmatrix import Adafruit_RGBmatrix
 
+filepath = '/home/pi/pybits/block_list.txt'
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -17,7 +18,7 @@ DIM_MED = 128
 DIM_LOW = 100
 
 # amount of time each LED row represents in seconds for block icons
-TIMESCALE = 30
+TIMESCALE = 60
 
 # default location of block hash on grid
 HASH_X = 8
@@ -105,7 +106,7 @@ while True:
 	mempoolSize = mempoolInfo['bytes']
 	
 	# load recent block info from file created by blocks.py
-	f = open('block_list.txt','r')
+	f = open(filepath,'r')
 	d = f.read()
 	blockData = json.loads(d)
 	f.close()
@@ -115,23 +116,27 @@ while True:
 	timeLimit = TIMESCALE * (33 - ICONSIZE) * 3
 	recentBlocks = []
 	elapsed = 0
+	first = True
 	while elapsed <= timeLimit and len(blockData) > 0:
 		key = max(blockData.keys())
 		block = blockData[key]
 		blockTime = datetime.strptime(block['time'], '%B %d %Y - %H:%M:%S')
 		elapsed = int((now - blockTime).total_seconds())
+		blockInfo = {'time': elapsed, 'hash': block['hash'], 'index': key}
 		if (elapsed <= timeLimit):
-			recentBlocks.append({'time': elapsed, 'hash': block['hash'], 'index': key})
+			recentBlocks.append(blockInfo)
+		# save newest block in case nothing in range
+		if first:
+			first = False
+			newestBlock = blockInfo
 		del blockData[key]
 
-	# freeze display if nothing to update
+	# use newest block if recent blocks are all out of range
 	if len(recentBlocks) < 1:
-		time.sleep(REFRESH)
-		continue
+		recentBlocks.append(newestBlock)
 	
 	latestHash = recentBlocks[0]['hash']
 	latestHeight = recentBlocks[0]['index']
-	backupBlock = recentBlocks[0]
 
 	#clear LED grid
 	matrix.Clear()
@@ -144,8 +149,10 @@ while True:
 
 	# print additional stats to console
 	os.system('clear')
+	print "Block height:", latestHeight
+	print
+	print
 	print "Blocks until next diff adj:", 2016-int(latestHeight)%2016
-	print "Last adj at block:", int(latestHeight) - (int(latestHeight)%2016)
 	print
 	pctSince =  int((int(latestHeight)%2016 / float(2016)) * 100)
 	pctUntil = 100 - pctSince

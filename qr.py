@@ -15,7 +15,6 @@ for i in t:
 		matrix.SetPixel(row, col, 255-int(i)*255, 255-int(i)*255, 255-int(i)*255)
 		col += 1
 	else:
-		print "N", row, col
 		row -= 1
 		col = 0
 	
