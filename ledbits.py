@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 
+try:
+    import http.client as httplib
+except ImportError:
+    import httplib
+
 import time
 import os
 import json
 import random
+import socket
 import bitcoinAuth
 
 from datetime import datetime
@@ -124,9 +130,13 @@ def drawBlocks(recentBlocks, size):
 				for y in range(size):
 					matrix.SetPixel(31 - inc - x, 31 - y, r, g, b)
 
-while True:	
+while True:		
 	# connect to node and get current mem pool size
-	mempoolInfo = rpc_connection.getmempoolinfo()
+	try:
+		mempoolInfo = rpc_connection.getmempoolinfo()
+	except (socket.error, httplib.CannotSendRequest):
+		print "TIMEOUT ERROR!"
+	
 	numTx = mempoolInfo['size']
 	mempoolSize = mempoolInfo['bytes']
 	
