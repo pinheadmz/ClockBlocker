@@ -10,13 +10,14 @@ Add this line to bitcoin.conf:
 `blocknotify=python /PATH TO YOUR DIRECTORY/block.py %s`
 
 these lines also help with running a full node on a Raspberry Pi:
-`port=8334
 
-minrelaytxfee=0.00005000
+`port=8334`
 
-limitfreerelay=0
+`minrelaytxfee=0.00005000`
 
-dbcache=50`
+`limitfreerelay=0`
+
+`dbcache=50`
 
 And create a file called bitcoinAuth.py in your directory with:
 
