@@ -11,8 +11,11 @@ Add this line to bitcoin.conf:
 
 these lines also help with running a full node on a Raspberry Pi:
 `port=8334
+
 minrelaytxfee=0.00005000
+
 limitfreerelay=0
+
 dbcache=50`
 
 And create a file called bitcoinAuth.py in your directory with:
