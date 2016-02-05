@@ -18,7 +18,7 @@ DIM_MED = 128
 DIM_LOW = 100
 
 # amount of time each LED row represents in seconds for block icons
-TIMESCALE = 60
+TIMESCALE = 30
 
 # default location of block hash on grid
 HASH_X = 8
@@ -36,6 +36,31 @@ matrix = Adafruit_RGBmatrix(32, 1)
 
 # init bitcoin RPC connection
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
+
+
+# draw the mempool
+def drawMempool(txs):
+	row = 27
+	col = 8
+	num = (txs/10)%192
+	for x in range(num):
+		matrix.SetPixel(row, col, 190, 190, 0)
+		
+		if col < 23:
+			col += 1
+		else:
+			col = 8
+			row -= 1
+			
+		if row < 16:
+			row = 27
+	
+	
+	
+	
+	
+	
+
 
 
 # draws a block hash on the grid from point (x, y)
@@ -146,7 +171,10 @@ while True:
 	
 	# draw block icons
 	drawBlocks(recentBlocks, ICONSIZE)
-
+	
+	# draw mempool
+	drawMempool(numTx)
+	
 	# print additional stats to console
 	os.system('clear')
 	print "Block height:", latestHeight
