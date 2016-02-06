@@ -4,14 +4,11 @@ Requires python-bitcoinrpc https://github.com/jgarzik/python-bitcoinrpc
 
 Also requires python QR Code: https://github.com/mnooner256/pyqrcode
 
-
 Add this line to bitcoin.conf:
 
 `blocknotify=python /PATH TO YOUR DIRECTORY/block.py %s`
 
 these lines also help with running a full node on a Raspberry Pi:
-
-`port=8334`
 
 `minrelaytxfee=0.00005000`
 

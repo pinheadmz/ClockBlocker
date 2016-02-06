@@ -5,12 +5,14 @@ try:
 except ImportError:
     import httplib
 
+import pyqrcode
 import time
 import os
 import json
 import random
 import socket
 import bitcoinAuth
+import sys, select, tty, termios
 
 from datetime import datetime
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
@@ -33,9 +35,20 @@ HASH_Y = 15
 # size of block icons (squared)
 ICONSIZE = 4
 
+# mempool space
+ROWMIN = 27
+ROWMAX = 16
+COLMIN = 8
+COLMAX = 23
+
+# number of mempool transactions each LED represents
+MEMPOOLSCALE = 10
+
 # refresh rate in seconds
 REFRESH = 1
 
+# number of seconds to display QR code for tip
+QRTIME = 5
 
 # init LED grid, rows and chain length are both required parameters:
 matrix = Adafruit_RGBmatrix(32, 1)
@@ -44,29 +57,81 @@ matrix = Adafruit_RGBmatrix(32, 1)
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
 
 
-# draw the mempool
-def drawMempool(txs):
-	row = 27
-	col = 8
-	num = (txs/10)%192
-	for x in range(num):
-		matrix.SetPixel(row, col, 190, 190, 0)
+# check for keyboard input
+def checkKeyIn():
+	# capture current terminal settings before setting to one character at a time
+	old_settings = termios.tcgetattr(sys.stdin)
+
+	try:
+		# one char at a time, no newline required
+		tty.setcbreak(sys.stdin.fileno())
+
+		if select.select([sys.stdin], [], [], 1) == ([sys.stdin], [], []):
+			key = sys.stdin.read(1)
+		else:
+			key = False
+	finally:
+		# reset terminal settings to normal expected behavior
+		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+	if key == "T" or key == "t":
+		showQR()
 		
-		if col < 23:
+		
+# display bitcoin address QR code for tipping
+def showQR():
+	# connect to node and get new wallet address
+	try:
+		addr = rpc_connection.getnewaddress()
+	except (socket.error, httplib.CannotSendRequest):
+		print "TIMEOUT ERROR!"
+		return False
+	
+	# generate QR code and display on LED grid
+	code = pyqrcode.create(addr, error='M', version=3)
+	t = code.text(1)
+	print addr
+	print t
+	row = 31
+	col = 0
+	matrix.Clear()
+	for i in t:
+		if i != '\n':
+			matrix.SetPixel(row, col, 255-int(i)*255, 255-int(i)*255, 255-int(i)*255)
 			col += 1
 		else:
-			col = 8
 			row -= 1
-			
-		if row < 16:
-			row = 27
+			col = 0
 	
+		time.sleep(0.001)
 	
-	
-	
-	
-	
+	# give us a chance to scan it
+	time.sleep(QRTIME)
+	return True
 
+
+# draw the mempool
+def drawMempool(txs):
+	row = ROWMIN
+	col = COLMIN
+	maxDots = (ROWMAX - ROWMIN + 1) * (COLMAX - COLMIN + 1)
+
+	# scale down mempool size for viewing	
+	num = (txs/MEMPOOLSCALE)
+	
+	for x in range(num):
+		# color changes each time we fill up the space and start over at the top
+		# 'red' value may exceed 255 max if layer > 2
+		layer = num%maxDots
+		matrix.SetPixel(row, col, layer*120, (1/(layer+1))*255, 0)
+		
+		if col < COLMAX:
+			col += 1
+		else:
+			col = COLMIN
+			row -= 1
+		if row < ROWMAX:
+			row = ROWMIN
 
 
 # draws a block hash on the grid from point (x, y)
@@ -130,15 +195,20 @@ def drawBlocks(recentBlocks, size):
 				for y in range(size):
 					matrix.SetPixel(31 - inc - x, 31 - y, r, g, b)
 
+
+#####################
+### THE MAIN LOOP! ##
+#####################
+numTx = 0
+memBytes = 0
 while True:		
 	# connect to node and get current mem pool size
 	try:
 		mempoolInfo = rpc_connection.getmempoolinfo()
+		numTx = mempoolInfo['size']
+		memBytes = mempoolInfo['bytes']
 	except (socket.error, httplib.CannotSendRequest):
 		print "TIMEOUT ERROR!"
-	
-	numTx = mempoolInfo['size']
-	mempoolSize = mempoolInfo['bytes']
 	
 	# load recent block info from file created by blocks.py
 	f = open(filepath,'r')
@@ -183,8 +253,11 @@ while True:
 	drawBlocks(recentBlocks, ICONSIZE)
 	
 	# draw mempool
-	drawMempool(numTx)
-	
+	drawMempool(numTx)	
+
+	# check for keyboard input
+	checkKeyIn()
+		
 	# print additional stats to console
 	os.system('clear')
 	print "Block height:", latestHeight
@@ -202,9 +275,9 @@ while True:
 	pctUntilB = 100 - pctSinceB
 	print "[" + ("+" * pctSinceB) + ("-" * pctUntilB) + "]"
 	print
-	print "Mempool TX's:", numTx, "memory:", mempoolSize, "MB"	
+	print "Mempool TX's:", numTx, "memory:", memBytes/1000, "MB"	
 	print
-	print "Bytes:", "." * (mempoolInfo['bytes']/10000) + " " + str(mempoolInfo['bytes'])
+	print "Bytes:", "." * (memBytes/10000) + " " + str(memBytes)
 	print
 	print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
 	print
