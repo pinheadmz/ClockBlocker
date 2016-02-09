@@ -15,10 +15,14 @@ import bitcoinAuth
 import sys, select, tty, termios
 
 from datetime import datetime
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from bitcoinrpc import AuthServiceProxy, JSONRPCException
 from rgbmatrix import Adafruit_RGBmatrix
 
+# log of blocks and times updated by block.py
 filepath = '/home/pi/pybits/block_list.txt'
+
+# capture current terminal settings before setting to one character at a time
+old_settings = termios.tcgetattr(sys.stdin)
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -53,23 +57,35 @@ QRTIME = 5
 # init LED grid, rows and chain length are both required parameters:
 matrix = Adafruit_RGBmatrix(32, 1)
 
-# init bitcoin RPC connection
-rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
+#
+# -- TODO buffer output to grid to eliminate flashing every clear
+#
 
+# init or hopefully reset the bitcoin RPC connection
+rpc_connection = None
+def initRPC():
+	global rpc_connection
+	rpc_connection = None
+	rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
+	print "New RPC connection:", rpc_connection
 
-# check for keyboard input
+# check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
-	# capture current terminal settings before setting to one character at a time
-	old_settings = termios.tcgetattr(sys.stdin)
-
 	try:
 		# one char at a time, no newline required
 		tty.setcbreak(sys.stdin.fileno())
 
-		if select.select([sys.stdin], [], [], 1) == ([sys.stdin], [], []):
+		sel = select.select([sys.stdin], [], [], REFRESH)
+		
+		if sel[0]:
 			key = sys.stdin.read(1)
 		else:
 			key = False
+	except KeyboardInterrupt:
+		# reset terminal settings to normal expected behavior
+		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+		print "Interrupt caught waiting for keypress"
+		sys.exit()
 	finally:
 		# reset terminal settings to normal expected behavior
 		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
@@ -80,18 +96,29 @@ def checkKeyIn():
 		
 # display bitcoin address QR code for tipping
 def showQR():
+	global rpc_connection
+	print "Loading bitcoin address..."
+
 	# connect to node and get new wallet address
 	try:
 		addr = rpc_connection.getnewaddress()
 	except (socket.error, httplib.CannotSendRequest):
-		print "TIMEOUT ERROR!"
+		print "showQR Timeout"
+		initRPC()
 		return False
+	
+	# bypass rpc for testing
+	#addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
+	
 	
 	# generate QR code and display on LED grid
 	code = pyqrcode.create(addr, error='M', version=3)
 	t = code.text(1)
 	print addr
-	print t
+	
+	# print the actual QR code to terminal with 1's and 0's
+	#print t
+	
 	row = 31
 	col = 0
 	matrix.Clear()
@@ -109,12 +136,11 @@ def showQR():
 	time.sleep(QRTIME)
 	return True
 
-
 # draw the mempool
 def drawMempool(txs):
 	row = ROWMIN
 	col = COLMIN
-	maxDots = (ROWMAX - ROWMIN + 1) * (COLMAX - COLMIN + 1)
+	maxDots = (ROWMIN - ROWMAX + 1) * (COLMAX - COLMIN + 1)
 
 	# scale down mempool size for viewing	
 	num = (txs/MEMPOOLSCALE)
@@ -122,8 +148,8 @@ def drawMempool(txs):
 	for x in range(num):
 		# color changes each time we fill up the space and start over at the top
 		# 'red' value may exceed 255 max if layer > 2
-		layer = num%maxDots
-		matrix.SetPixel(row, col, layer*120, (1/(layer+1))*255, 0)
+		layer = x/maxDots
+		matrix.SetPixel(row, col, (layer)*127, 255/(layer+1), 0)
 		
 		if col < COLMAX:
 			col += 1
@@ -199,6 +225,7 @@ def drawBlocks(recentBlocks, size):
 #####################
 ### THE MAIN LOOP! ##
 #####################
+initRPC()
 numTx = 0
 memBytes = 0
 while True:		
@@ -208,7 +235,9 @@ while True:
 		numTx = mempoolInfo['size']
 		memBytes = mempoolInfo['bytes']
 	except (socket.error, httplib.CannotSendRequest):
-		print "TIMEOUT ERROR!"
+		print "mempoolInfo TIMEOUT ERROR!"
+		initRPC()
+		continue
 	
 	# load recent block info from file created by blocks.py
 	f = open(filepath,'r')
@@ -255,8 +284,6 @@ while True:
 	# draw mempool
 	drawMempool(numTx)	
 
-	# check for keyboard input
-	checkKeyIn()
 		
 	# print additional stats to console
 	os.system('clear')
@@ -282,4 +309,8 @@ while True:
 	print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
 	print
 
-	time.sleep(REFRESH)
+	# check for keyboard input
+	checkKeyIn()
+
+	# replaced by checkKeyIn()
+	#time.sleep(REFRESH)

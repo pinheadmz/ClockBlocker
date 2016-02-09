@@ -1,12 +1,18 @@
 import time
+import bitcoinAuth
 import pyqrcode
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from bitcoinrpc import AuthServiceProxy, JSONRPCException
 from rgbmatrix import Adafruit_RGBmatrix
 matrix = Adafruit_RGBmatrix(32, 1)
 matrix.Clear()
-code = pyqrcode.create('1FSFNH32H3cZAjuGwtyJxrfYPQsYehfEkA', error='M', version=3)
+
+rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
+
+addr = rpc_connection.getnewaddress()
+code = pyqrcode.create(addr, error='M', version=3)
 t = code.text(1)
 print t
+
 row = 31
 col = 0
 
@@ -20,5 +26,4 @@ for i in t:
 	
 	time.sleep(0.001)
 	
-while True:
-	time.sleep(1)
+time.sleep(3)

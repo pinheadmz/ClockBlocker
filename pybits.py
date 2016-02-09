@@ -13,7 +13,7 @@ import json
 
 # initialize bitcoin RPC connection and gather mempool info
 import bitcoinAuth
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+from bitcoinrpc import AuthServiceProxy, JSONRPCException
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
 mempoolInfo = rpc_connection.getmempoolinfo()
 numTx = mempoolInfo['size']

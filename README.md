@@ -4,6 +4,10 @@ Requires python-bitcoinrpc https://github.com/jgarzik/python-bitcoinrpc
 
 Also requires python QR Code: https://github.com/mnooner256/pyqrcode
 
+and Adafruit RGB matrix driver: https://github.com/adafruit/rpi-rgb-led-matrix/ 
+
+see more at: https://learn.adafruit.com/adafruit-rgb-matrix-plus-real-time-clock-hat-for-raspberry-pi/driving-matrices
+
 Add this line to bitcoin.conf:
 
 `blocknotify=python /PATH TO YOUR DIRECTORY/block.py %s`
