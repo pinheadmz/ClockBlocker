@@ -31,7 +31,8 @@ from rgbmatrix import Adafruit_RGBmatrix
 #############
 
 # log of blocks and times updated by block.py
-filepath = '/home/pi/pybits/block_list.txt'
+blockFile = '/home/pi/pybits/block_list.txt'
+peerFile = '/home/pi/pybits/peer_list.txt'
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -346,10 +347,16 @@ while True:
 	memBytes = mempoolInfo['bytes']
 	
 	# load recent block info from file created by blocks.py
-	f = open(filepath,'r')
+	f = open(blockFile,'r')
 	d = f.read()
 	blockData = json.loads(d)
 	f.close()
+	
+	# load peers info from file created by blocks.py
+	p = open(peerFile,'r')
+	pd = p.read()
+	peerData = json.loads(pd)
+	p.close()
 	
 	# load info about as many recent blocks as can fit on grid given TIMESCALE and ICONSIZE
 	now = datetime.utcnow()
@@ -413,6 +420,9 @@ while True:
 	print
 	print "Mempool TX's:", numTx, " -- Memory:", memBytes, "bytes"	
 	print
+	print "Connected peers:"
+	for peer in peerData:
+		print '%-25s%-30s%-20s%-20s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 
 	# check for keyboard input and pause before display refresh
 	checkKeyIn()

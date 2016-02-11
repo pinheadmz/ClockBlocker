@@ -1,3 +1,5 @@
 block_list.txt
+peer_list.txt
 bitcoinAuth.py
+ipInfoAuth.py
 *.pyc
