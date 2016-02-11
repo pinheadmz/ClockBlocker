@@ -42,7 +42,6 @@ import base64
 import decimal
 import json
 import logging
-import socket
 try:
     import urllib.parse as urlparse
 except ImportError:
@@ -50,7 +49,7 @@ except ImportError:
 
 USER_AGENT = "AuthServiceProxy/0.1"
 
-HTTP_TIMEOUT = 30
+HTTP_TIMEOUT = 3000
 
 log = logging.getLogger("BitcoinRPC")
 
@@ -70,7 +69,7 @@ class AuthServiceProxy(object):
 
     def __init__(self, service_url, service_name=None, timeout=HTTP_TIMEOUT, connection=None):
         self.__service_url = service_url
-        self.__service_name = service_name
+        self._service_name = service_name
         self.__url = urlparse.urlparse(service_url)
         if self.__url.port is None:
             port = 80
@@ -103,8 +102,8 @@ class AuthServiceProxy(object):
         if name.startswith('__') and name.endswith('__'):
             # Python internal stuff
             raise AttributeError
-        if self.__service_name is not None:
-            name = "%s.%s" % (self.__service_name, name)
+        if self._service_name is not None:
+            name = "%s.%s" % (self._service_name, name)
         return AuthServiceProxy(self.__service_url, name, connection=self.__conn)
 
     def _request(self, method, path, postdata):
@@ -119,20 +118,21 @@ class AuthServiceProxy(object):
         try:
             self.__conn.request(method, path, postdata, headers)
             return self._get_response()
-        except (httplib.BadStatusLine, socket.timeout, httplib.CannotSendRequest):
-			print "bitcoinrpc _request Timeout"
-			self.__conn.close()
-			self.__conn.request(method, path, postdata, headers)
-			return self._get_response()
-
+        except httplib.BadStatusLine as e:
+            if e.line == "''": # if connection was closed, try again
+                self.__conn.close()
+                self.__conn.request(method, path, postdata, headers)
+                return self._get_response()
+            else:
+                raise
 
     def __call__(self, *args):
         AuthServiceProxy.__id_count += 1
 
-        log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self.__service_name,
+        log.debug("-%s-> %s %s"%(AuthServiceProxy.__id_count, self._service_name,
                                  json.dumps(args, default=EncodeDecimal)))
         postdata = json.dumps({'version': '1.1',
-                               'method': self.__service_name,
+                               'method': self._service_name,
                                'params': args,
                                'id': AuthServiceProxy.__id_count}, default=EncodeDecimal)
         response = self._request('POST', self.__url.path, postdata)

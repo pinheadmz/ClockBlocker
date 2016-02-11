@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+################
+# dependencies #
+################
+
 try:
     import http.client as httplib
 except ImportError:
     import httplib
-
+import atexit
 import pyqrcode
 import time
 import os
@@ -12,17 +16,22 @@ import json
 import random
 import socket
 import bitcoinAuth
-import sys, select, tty, termios
+import sys
+import select
+import tty
+import termios
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
 from rgbmatrix import Adafruit_RGBmatrix
 
+
+#############
+# constants #
+#############
+
 # log of blocks and times updated by block.py
 filepath = '/home/pi/pybits/block_list.txt'
-
-# capture current terminal settings before setting to one character at a time
-old_settings = termios.tcgetattr(sys.stdin)
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -40,10 +49,22 @@ HASH_Y = 15
 ICONSIZE = 4
 
 # mempool space
-ROWMIN = 27
-ROWMAX = 16
-COLMIN = 8
-COLMAX = 23
+MEM_ROWMIN = 27
+MEM_ROWMAX = 16
+MEM_COLMIN = 8
+MEM_COLMAX = 23
+
+# difficulty space
+DIF_ROWMIN = 27
+DIF_ROWMAX = 0
+DIF_COLMIN = 4
+DIF_COLMAX = 7
+
+# subsidy space
+SUB_ROWMIN = 27
+SUB_ROWMAX = 0
+SUB_COLMIN = 24
+SUB_COLMAX = 27
 
 # number of mempool transactions each LED represents
 MEMPOOLSCALE = 10
@@ -54,67 +75,89 @@ REFRESH = 1
 # number of seconds to display QR code for tip
 QRTIME = 5
 
+
+##############
+# initialize #
+##############
+
+# capture current terminal settings before setting to one character at a time
+old_settings = termios.tcgetattr(sys.stdin)
+def cleanup():
+	# reset terminal settings to normal expected behavior
+	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+	# clear LED grid
+	matrix.Clear()
+	print "bye!"
+atexit.register(cleanup)
+# one char at a time, no newline required
+tty.setcbreak(sys.stdin.fileno())
+
+# init the bitcoin RPC connection
+rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
+
 # init LED grid, rows and chain length are both required parameters:
 matrix = Adafruit_RGBmatrix(32, 1)
 
-#
-# -- TODO buffer output to grid to eliminate flashing every clear
-#
+# this matrix buffers the LED grid output to avoid using clear() every frame
+buffer = []
 
-# init or hopefully reset the bitcoin RPC connection
-rpc_connection = None
-def initRPC():
-	global rpc_connection
-	rpc_connection = None
-	rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
-	print "New RPC connection:", rpc_connection
+
+#############
+# functions #
+#############
+
+# fill buffer matrix with black (off) pixels
+def bufferInit():
+	global buffer
+	buffer = [[(0,0,0) for i in range(32)] for j in range(32)]
+
+# change a pixel in the buffer
+def bufferPixel(x, y, r, g, b):
+	global buffer
+	buffer[x][y] = (r, g, b)
+	
+# draw entire buffer to LED grid without needing clear()
+def bufferDraw():
+	for x in range(32):
+		for y in range(32):
+			matrix.SetPixel(x, y, buffer[x][y][0], buffer[x][y][1], buffer[x][y][2])
+
 
 # check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
 	try:
-		# one char at a time, no newline required
-		tty.setcbreak(sys.stdin.fileno())
-
 		sel = select.select([sys.stdin], [], [], REFRESH)
-		
 		if sel[0]:
 			key = sys.stdin.read(1)
 		else:
 			key = False
 	except KeyboardInterrupt:
-		# reset terminal settings to normal expected behavior
-		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 		print "Interrupt caught waiting for keypress"
 		sys.exit()
-	finally:
-		# reset terminal settings to normal expected behavior
-		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
 	if key == "T" or key == "t":
 		showQR()
-		
-		
+
+
 # display bitcoin address QR code for tipping
 def showQR():
 	global rpc_connection
 	print "Loading bitcoin address..."
 
 	# connect to node and get new wallet address
-	try:
-		addr = rpc_connection.getnewaddress()
-	except (socket.error, httplib.CannotSendRequest):
-		print "showQR Timeout"
-		initRPC()
-		return False
+	#try:
+	#	addr = rpc_connection.getnewaddress()
+	#except (socket.error, httplib.CannotSendRequest):
+	#	print "showQR Timeout"
+	#	return False
 	
 	# bypass rpc for testing
-	#addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
-	
+	addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
 	
 	# generate QR code and display on LED grid
+	print addr
 	code = pyqrcode.create(addr, error='M', version=3)
 	t = code.text(1)
-	print addr
 	
 	# print the actual QR code to terminal with 1's and 0's
 	#print t
@@ -134,30 +177,98 @@ def showQR():
 	
 	# give us a chance to scan it
 	time.sleep(QRTIME)
-	return True
+
+
+# draw blocks since last difficulty adjustment
+def drawDiff(height):
+	since = int(latestHeight)%2016
+	row = DIF_ROWMIN
+	col = DIF_COLMIN
+	maxDots = (DIF_ROWMIN - DIF_ROWMAX + 1) * (DIF_COLMAX - DIF_COLMIN + 1)
+
+	# number of blocks represented by each LED
+	dotValue = 2016/maxDots
+
+	# therefore number of dots to draw are...
+	drawDots = since/dotValue
+	
+	# last dot is a fraction
+	lastDot = float(since%dotValue) / dotValue
+	
+	for x in range(drawDots):
+		if (x+1) == drawDots:
+			# last dot will indicate fraction from blue (emptiest) to red (fullest)
+			bufferPixel(row, col, int(lastDot * 255), 0, 255 - int(lastDot * 255))
+		else:
+			# regular "full" dot -- purple?
+			bufferPixel(row, col, 100, 0, 200)
+		
+		if row > DIF_ROWMAX:
+			row -= 1
+		else:
+			row = DIF_ROWMIN
+			col += 1
+		# this shouldn't ever happen...
+		if col > DIF_COLMAX:
+			col = DIF_COLMIN
+
+
+# draw blocks since last subsidy halving
+def drawSubsidy(height):
+	since = int(latestHeight)%210000
+	row = SUB_ROWMIN
+	col = SUB_COLMIN
+	maxDots = (SUB_ROWMIN - SUB_ROWMAX + 1) * (SUB_COLMAX - SUB_COLMIN + 1)
+
+	# number of blocks represented by each LED
+	dotValue = 210000/maxDots
+
+	# therefore number of dots to draw are...
+	drawDots = since/dotValue
+	
+	# last dot is a fraction
+	lastDot = float(since%dotValue) / dotValue
+	
+	for x in range(drawDots):
+		if (x+1) == drawDots:
+			# last dot will indicate fraction from green (emptiest) to blue (fullest)
+			bufferPixel(row, col, 0, 255 - int(lastDot * 255), int(lastDot * 255))
+		else:
+			# regular "full" dot -- purple?
+			bufferPixel(row, col, 0, 200, 100)
+		
+		if row > SUB_ROWMAX:
+			row -= 1
+		else:
+			row = SUB_ROWMIN
+			col += 1
+		# this shouldn't ever happen...
+		if col > SUB_COLMAX:
+			col = SUB_COLMIN
+
 
 # draw the mempool
 def drawMempool(txs):
-	row = ROWMIN
-	col = COLMIN
-	maxDots = (ROWMIN - ROWMAX + 1) * (COLMAX - COLMIN + 1)
+	row = MEM_ROWMIN
+	col = MEM_COLMIN
+	maxDots = (MEM_ROWMIN - MEM_ROWMAX + 1) * (MEM_COLMAX - MEM_COLMIN + 1)
 
 	# scale down mempool size for viewing	
-	num = (txs/MEMPOOLSCALE)
+	num = txs/MEMPOOLSCALE
 	
 	for x in range(num):
 		# color changes each time we fill up the space and start over at the top
 		# 'red' value may exceed 255 max if layer > 2
 		layer = x/maxDots
-		matrix.SetPixel(row, col, (layer)*127, 255/(layer+1), 0)
+		bufferPixel(row, col, (layer)*127, 255/(layer+1), 0)
 		
-		if col < COLMAX:
+		if col < MEM_COLMAX:
 			col += 1
 		else:
-			col = COLMIN
+			col = MEM_COLMIN
 			row -= 1
-		if row < ROWMAX:
-			row = ROWMIN
+		if row < MEM_ROWMAX:
+			row = MEM_ROWMIN
 
 
 # draws a block hash on the grid from point (x, y)
@@ -181,11 +292,9 @@ def drawHash(hash, x, y):
         	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
 		for col, bit in enumerate(chunkBinary):		
 			if bit == "1":
-				matrix.SetPixel(y - row, x + col, r1, g1, b1)
+				bufferPixel(y - row, x + col, r1, g1, b1)
 			else:
-				matrix.SetPixel(y - row, x + col, r0, g0, b0)
-
-	return True
+				bufferPixel(y - row, x + col, r0, g0, b0)
 
 
 # draw block icons around outside perimeter of LED grid
@@ -211,33 +320,30 @@ def drawBlocks(recentBlocks, size):
 		if section == 0:
 			for x in range(size):
 				for y in range(size):
-					matrix.SetPixel(inc + x, 0 + y, r, g, b)
+					bufferPixel(inc + x, 0 + y, r, g, b)
 		elif section == 1:
 			for x in range(size):
 				for y in range(size):
-					matrix.SetPixel(31 - x, inc + y, r, g, b)
+					bufferPixel(31 - x, inc + y, r, g, b)
 		elif section == 2:
 			for x in range(size):
 				for y in range(size):
-					matrix.SetPixel(31 - inc - x, 31 - y, r, g, b)
+					bufferPixel(31 - inc - x, 31 - y, r, g, b)
 
 
 #####################
 ### THE MAIN LOOP! ##
 #####################
-initRPC()
-numTx = 0
-memBytes = 0
+
 while True:		
 	# connect to node and get current mem pool size
 	try:
 		mempoolInfo = rpc_connection.getmempoolinfo()
-		numTx = mempoolInfo['size']
-		memBytes = mempoolInfo['bytes']
 	except (socket.error, httplib.CannotSendRequest):
 		print "mempoolInfo TIMEOUT ERROR!"
-		initRPC()
-		continue
+		continue	
+	numTx = mempoolInfo['size']
+	memBytes = mempoolInfo['bytes']
 	
 	# load recent block info from file created by blocks.py
 	f = open(filepath,'r')
@@ -268,12 +374,14 @@ while True:
 	# use newest block if recent blocks are all out of range
 	if len(recentBlocks) < 1:
 		recentBlocks.append(newestBlock)
-	
 	latestHash = recentBlocks[0]['hash']
 	latestHeight = recentBlocks[0]['index']
-
-	#clear LED grid
-	matrix.Clear()
+	
+	#############################
+	# BEGIN DRAWING TO LED GRID #
+	#############################
+	#clear buffer
+	bufferInit()
 
 	# draw latest block hash, bottom center
 	drawHash(latestHash, HASH_X, HASH_Y)
@@ -282,35 +390,29 @@ while True:
 	drawBlocks(recentBlocks, ICONSIZE)
 	
 	# draw mempool
-	drawMempool(numTx)	
+	drawMempool(numTx)
+	
+	# draw difficulty period
+	drawDiff(latestHeight)
+	
+	# draw subsidy period
+	drawSubsidy(latestHeight)
+	
+	# push buffer to actual LED grid
+	bufferDraw()
 
-		
-	# print additional stats to console
+	######################################
+	# PRINT ADDITIONAL OUTPUT TO CONSOLE #
+	######################################
 	os.system('clear')
 	print "Block height:", latestHeight
 	print
-	print
-	print "Blocks until next diff adj:", 2016-int(latestHeight)%2016
-	print
-	pctSince =  int((int(latestHeight)%2016 / float(2016)) * 100)
-	pctUntil = 100 - pctSince
-	print "[" + ("+" * pctSince) + ("-" * pctUntil) + "]"
+	print "Blocks until next difficulty adjustment:", 2016-int(latestHeight)%2016
 	print
 	print "Blocks until next subsidy halvening:", 210000 - int(latestHeight)%210000
 	print
-	pctSinceB = int(int(latestHeight)%210000 / float(210000) * 100)
-	pctUntilB = 100 - pctSinceB
-	print "[" + ("+" * pctSinceB) + ("-" * pctUntilB) + "]"
-	print
-	print "Mempool TX's:", numTx, "memory:", memBytes/1000, "MB"	
-	print
-	print "Bytes:", "." * (memBytes/10000) + " " + str(memBytes)
-	print
-	print "Tx's:", "*" * (numTx/10) + " " + str(numTx)
+	print "Mempool TX's:", numTx, " -- Memory:", memBytes, "bytes"	
 	print
 
-	# check for keyboard input
+	# check for keyboard input and pause before display refresh
 	checkKeyIn()
-
-	# replaced by checkKeyIn()
-	#time.sleep(REFRESH)
