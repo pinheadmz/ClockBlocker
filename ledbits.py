@@ -43,7 +43,7 @@ DIM_LOW = 100
 TIMESCALE = 30
 
 # default location of block hash on grid
-HASH_X = 8
+HASH_X = 4
 HASH_Y = 15
 
 # size of block icons (squared)
@@ -52,14 +52,14 @@ ICONSIZE = 4
 # mempool space
 MEM_ROWMIN = 27
 MEM_ROWMAX = 16
-MEM_COLMIN = 8
-MEM_COLMAX = 23
+MEM_COLMIN = 4
+MEM_COLMAX = 19
 
 # difficulty space
 DIF_ROWMIN = 27
 DIF_ROWMAX = 0
-DIF_COLMIN = 4
-DIF_COLMAX = 7
+DIF_COLMIN = 20
+DIF_COLMAX = 23
 
 # subsidy space
 SUB_ROWMIN = 27
@@ -143,17 +143,18 @@ def checkKeyIn():
 # display bitcoin address QR code for tipping
 def showQR():
 	global rpc_connection
+	print
 	print "Loading bitcoin address..."
 
 	# connect to node and get new wallet address
-	#try:
-	#	addr = rpc_connection.getnewaddress()
-	#except (socket.error, httplib.CannotSendRequest):
-	#	print "showQR Timeout"
-	#	return False
+	try:
+		addr = rpc_connection.getnewaddress()
+	except (socket.error, httplib.CannotSendRequest):
+		print "showQR Timeout"
+		return False
 	
 	# bypass rpc for testing
-	addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
+	#addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
 	
 	# generate QR code and display on LED grid
 	print addr
@@ -422,7 +423,7 @@ while True:
 	print
 	print "Connected peers:"
 	for peer in peerData:
-		print '%-25s%-30s%-20s%-20s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
+		print '%-25.24s%-20.19s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 
 	# check for keyboard input and pause before display refresh
 	checkKeyIn()

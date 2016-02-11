@@ -79,6 +79,7 @@ def showQR():
 
 print "starting"
 showQR()
+matrix.clear()
 print "done"
 
 

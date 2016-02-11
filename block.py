@@ -96,12 +96,18 @@ def refreshPeers():
 		
 		# get the location info from IP API
 		thisIP = thisPeer['addr'].split(':')[0]
-		response = urllib2.urlopen('http://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP)
+		
+		try:
+			response = urllib2.urlopen('http://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP)
+		except urllib2.URLError:
+			print "IP Info error"
+			response = false	
+		
 		responseJson = json.load(response)	
 		
-		thisPeer['country'] = responseJson['countryName']
-		thisPeer['region'] = responseJson['regionName']
-		thisPeer['city'] = responseJson['cityName']
+		thisPeer['country'] = responseJson['countryName'] if response else ''
+		thisPeer['region'] = responseJson['regionName'] if response else ''
+		thisPeer['city'] = responseJson['cityName'] if response else ''
 
 		peers.append(thisPeer)
 	
