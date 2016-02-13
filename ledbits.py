@@ -20,6 +20,7 @@ import sys
 import select
 import tty
 import termios
+import random
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -139,6 +140,23 @@ def checkKeyIn():
 
 	if key == "T" or key == "t":
 		showQR()
+
+
+# received new incoming transaction
+def newTx(txData):
+	for tx in txData:
+		# celebrate!
+		for x in range(2):
+			# color splatter
+			for y in range(400):
+				pix = [ random.randint(0,31), random.randint(0,31), random.randint(0,255), random.randint(0,255), random.randint(0,255) ]
+				matrix.SetPixel(pix[0],pix[1],pix[2],pix[3],pix[4])
+				time.sleep(.001)
+			# clear a few holes
+			for i in range(1000):
+				matrix.SetPixel (random.randint(0,31), random.randint(0,31),0,0,0)
+				time.sleep(.0005)
+	# TODO - display tx amounts and wallet total balance
 
 
 # display bitcoin address QR code for tipping
@@ -359,6 +377,15 @@ while True:
 	pd = p.read()
 	peerData = json.loads(pd)
 	p.close()
+	
+	# check for a new Tx file, load, then delete it
+	if os.path.isfile(txFile):
+		t = open(txFile,'r')
+		td = t.read()
+		txData = json.loads(td)
+		t.close()
+		os.remove(txFile)
+		newTx(txData)
 	
 	# load info about as many recent blocks as can fit on grid given TIMESCALE and ICONSIZE
 	now = datetime.utcnow()
