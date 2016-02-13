@@ -53,22 +53,22 @@ ICONSIZE = 4
 MEM_ROWMIN = 27
 MEM_ROWMAX = 16
 MEM_COLMIN = 4
-MEM_COLMAX = 19
+MEM_COLMAX = 27
 
 # difficulty space
-DIF_ROWMIN = 27
+DIF_ROWMIN = 15
 DIF_ROWMAX = 0
 DIF_COLMIN = 20
 DIF_COLMAX = 23
 
 # subsidy space
-SUB_ROWMIN = 27
+SUB_ROWMIN = 15
 SUB_ROWMAX = 0
 SUB_COLMIN = 24
 SUB_COLMAX = 27
 
 # number of mempool transactions each LED represents
-MEMPOOLSCALE = 10
+MEMPOOLSCALE = 2
 
 # refresh rate in seconds
 REFRESH = 1

@@ -100,10 +100,13 @@ def refreshPeers():
 		try:
 			response = urllib2.urlopen('http://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP)
 		except urllib2.URLError:
-			print "IP Info error"
-			response = false	
+			print "Get IP Info error"
+			response = False	
 		
-		responseJson = json.load(response)	
+		if response:
+			responseJson = json.load(response)	
+		else:
+			responseJson = False
 		
 		thisPeer['country'] = responseJson['countryName'] if response else ''
 		thisPeer['region'] = responseJson['regionName'] if response else ''
