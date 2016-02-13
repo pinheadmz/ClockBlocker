@@ -70,7 +70,7 @@ SUB_COLMIN = 24
 SUB_COLMAX = 27
 
 # number of mempool transactions each LED represents
-MEMPOOLSCALE = 2
+MEMPOOLSCALE = 5
 
 # refresh rate in seconds
 REFRESH = 1
@@ -146,7 +146,7 @@ def checkKeyIn():
 def newTx(txData):
 	for tx in txData:
 		# celebrate!
-		for x in range(2):
+		for x in range(4):
 			# color splatter
 			for y in range(400):
 				pix = [ random.randint(0,31), random.randint(0,31), random.randint(0,255), random.randint(0,255), random.randint(0,255) ]
@@ -382,10 +382,12 @@ while True:
 	if os.path.isfile(txFile):
 		t = open(txFile,'r')
 		td = t.read()
-		txData = json.loads(td)
 		t.close()
-		os.remove(txFile)
-		newTx(txData)
+		if td:
+			txData = json.loads(td)
+			os.remove(txFile)
+			if txData:
+				newTx(txData)
 	
 	# load info about as many recent blocks as can fit on grid given TIMESCALE and ICONSIZE
 	now = datetime.utcnow()

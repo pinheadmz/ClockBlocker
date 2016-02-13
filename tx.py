@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import decimal
 import json
 import bitcoinAuth
 from sys import argv
@@ -26,6 +27,18 @@ script, txid = argv
 
 # initialize bitcoin RPC connection and gather info
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
+
+
+#############
+# functions #
+#############
+
+# because JSON dump hates decimals for soem reason
+def decToString(obj):
+ 	if isinstance(obj, (decimal.Decimal, int, float)):
+		return str(obj)
+	else:
+		return obj
 
 
 ########
@@ -54,8 +67,8 @@ txInfo = rpc_connection.gettransaction(txid)
 dataJson.append(txInfo)
 
 # convert back to string and write to file
-dataJsonString = json.dumps(dataJson)
-f.write(dataJsonString)
+dataJson = json.dumps(dataJson, default=decToString)
+f.write(dataJson)
 
 # close file
 f.close()
