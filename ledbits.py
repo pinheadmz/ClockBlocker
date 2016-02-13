@@ -33,6 +33,7 @@ from rgbmatrix import Adafruit_RGBmatrix
 # log of blocks and times updated by block.py
 blockFile = '/home/pi/pybits/block_list.txt'
 peerFile = '/home/pi/pybits/peer_list.txt'
+txFile = '/home/pi/pybits/tx.txt'
 
 # brightness limits for random colors
 DIM_MAX = 255
