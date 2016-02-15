@@ -53,20 +53,20 @@ ICONSIZE = 4
 
 # mempool space
 MEM_ROWMIN = 27
-MEM_ROWMAX = 16
+MEM_ROWMAX = 17
 MEM_COLMIN = 4
 MEM_COLMAX = 27
 
 # difficulty space
 DIF_ROWMIN = 15
 DIF_ROWMAX = 0
-DIF_COLMIN = 20
+DIF_COLMIN = 21
 DIF_COLMAX = 23
 
 # subsidy space
 SUB_ROWMIN = 15
 SUB_ROWMAX = 0
-SUB_COLMIN = 24
+SUB_COLMIN = 25
 SUB_COLMAX = 27
 
 # number of mempool transactions each LED represents
@@ -104,6 +104,8 @@ matrix = Adafruit_RGBmatrix(32, 1)
 # this matrix buffers the LED grid output to avoid using clear() every frame
 buffer = []
 
+# this array stores hashes of blocks that confirms my incoming transactions
+myTxBlocks = []
 
 #############
 # functions #
@@ -140,11 +142,20 @@ def checkKeyIn():
 
 	if key == "T" or key == "t":
 		showQR()
+	elif key == "Q" or key == "q":
+		sys.exit()
 
 
 # received new incoming transaction
 def newTx(txData):
+	global myTxBlocks
+	
 	for tx in txData:
+		# only celebrate tx receive, but add confirmations to myTxBlocks
+		if tx['confirmations'] == 1:
+			myTxBlocks.append( tx['blockhash'] )
+			continue
+		
 		# celebrate!
 		for x in range(4):
 			# color splatter
@@ -169,7 +180,7 @@ def showQR():
 	try:
 		addr = rpc_connection.getnewaddress()
 	except (socket.error, httplib.CannotSendRequest):
-		print "showQR Timeout"
+		print "getnewaddress http error"
 		return False
 	
 	# bypass rpc for testing
@@ -223,7 +234,7 @@ def drawDiff(height):
 		else:
 			# regular "full" dot -- purple?
 			bufferPixel(row, col, 100, 0, 200)
-		
+		'''
 		if row > DIF_ROWMAX:
 			row -= 1
 		else:
@@ -232,6 +243,14 @@ def drawDiff(height):
 		# this shouldn't ever happen...
 		if col > DIF_COLMAX:
 			col = DIF_COLMIN
+		'''
+		if col < DIF_COLMAX:
+			col += 1
+		else:
+			col = DIF_COLMIN
+			row -= 1
+		if row < DIF_ROWMAX:
+			row = DIF_ROWMIN
 
 
 # draw blocks since last subsidy halving
@@ -257,7 +276,7 @@ def drawSubsidy(height):
 		else:
 			# regular "full" dot -- purple?
 			bufferPixel(row, col, 0, 200, 100)
-		
+		'''
 		if row > SUB_ROWMAX:
 			row -= 1
 		else:
@@ -266,6 +285,14 @@ def drawSubsidy(height):
 		# this shouldn't ever happen...
 		if col > SUB_COLMAX:
 			col = SUB_COLMIN
+		'''
+		if col < SUB_COLMAX:
+			col += 1
+		else:
+			col = SUB_COLMIN
+			row -= 1
+		if row < SUB_ROWMAX:
+			row = SUB_ROWMIN
 
 
 # draw the mempool
@@ -326,30 +353,43 @@ def drawBlocks(recentBlocks, size):
 	for num, block in enumerate(recentBlocks):
 		hash = block['hash']
 		time = block['time']
+		if hash in myTxBlocks:
+			myTx = True
+		else:
+			myTx = False
 		
-		# choose color from block hash least sig bits
-		r = int(hash[-2:], 16)
-		g = int(hash[-4:-2], 16)
-		b = int(hash[-6:-4], 16)
+		# choose color from block hash least sig bits and boost overall brightness
+		r = (int(hash[-2:], 16)%200) + 55
+		g = (int(hash[-4:-2], 16)%200) + 55
+		b = (int(hash[-6:-4], 16)%200) + 55
 		
 		# figure out where this block goes around the edge of grid
 		t = time / TIMESCALE
 		section = t / (33 - size)
 		inc = t % (33 - size)
 
-		# draw icon
+		# draw icon, default empty square, filled in for confirmed Tx
 		if section == 0:
 			for x in range(size):
 				for y in range(size):
-					bufferPixel(inc + x, 0 + y, r, g, b)
+					if myTx:
+						bufferPixel(inc + x, 0 + y, r, g, b)
+					elif x == 0 or y == 0 or x == (size-1) or y == (size-1):
+						bufferPixel(inc + x, 0 + y, r, g, b)
 		elif section == 1:
 			for x in range(size):
 				for y in range(size):
-					bufferPixel(31 - x, inc + y, r, g, b)
+					if myTx:
+						bufferPixel(31 - x, inc + y, r, g, b)
+					elif x == 0 or y == 0 or x == (size-1) or y == (size-1):
+						bufferPixel(31 - x, inc + y, r, g, b)
 		elif section == 2:
 			for x in range(size):
 				for y in range(size):
-					bufferPixel(31 - inc - x, 31 - y, r, g, b)
+					if myTx:
+						bufferPixel(31 - inc - x, 31 - y, r, g, b)
+					elif x == 0 or y == 0 or x == (size-1) or y == (size-1):
+						bufferPixel(31 - inc - x, 31 - y, r, g, b)
 
 
 #####################
@@ -361,7 +401,7 @@ while True:
 	try:
 		mempoolInfo = rpc_connection.getmempoolinfo()
 	except (socket.error, httplib.CannotSendRequest):
-		print "mempoolInfo TIMEOUT ERROR!"
+		print "getmempoolinfo http error"
 		continue	
 	numTx = mempoolInfo['size']
 	memBytes = mempoolInfo['bytes']
@@ -383,9 +423,9 @@ while True:
 		t = open(txFile,'r')
 		td = t.read()
 		t.close()
+		os.remove(txFile)
 		if td:
 			txData = json.loads(td)
-			os.remove(txFile)
 			if txData:
 				newTx(txData)
 	
@@ -453,7 +493,7 @@ while True:
 	print
 	print "Connected peers:"
 	for peer in peerData:
-		print '%-25.24s%-20.19s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
+		print '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 
 	# check for keyboard input and pause before display refresh
 	checkKeyIn()

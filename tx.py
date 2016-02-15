@@ -73,4 +73,5 @@ f.write(dataJson)
 # close file
 f.close()
 
+print "--"
 print "New Tx!"
