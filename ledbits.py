@@ -35,9 +35,9 @@ from rgbmatrix import Adafruit_RGBmatrix
 #############
 
 # log of blocks and times updated by block.py
-blockFile = '/home/pi/pybits/block_list.txt'
-peerFile = '/home/pi/pybits/peer_list.txt'
-txFile = '/home/pi/pybits/tx.txt'
+blockFile = '/home/pi/pybits/data/block_list.txt'
+peerFile = '/home/pi/pybits/data/peer_list.txt'
+txFile = '/home/pi/pybits/data/tx.txt'
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -162,10 +162,17 @@ def checkKeyIn():
 def showValue(value):
 	#get the balance, default
 	if value == "balance":
-		value = str(rpc_connection.getbalance())
+		wallet = rpc_connection.getwalletinfo()
+		# add in unconfirmed balance for grand total -- so, not 0-conf safe I guess
+		value = str(wallet['balance'] + wallet['unconfirmed_balance'])
 		color = (50, 255, 50)
+		top = 9
 	else:
 		color = False
+		top = 0
+	
+	# edge case if you send yourself money -- TODO, better handling? I dunno
+	value = value if value != "0E-8" else "0.00000000"
 	
 	# init image palette 
 	image = Image.new('RGB', (32, 32))
@@ -173,9 +180,9 @@ def showValue(value):
 
 	# break up digits and print text
 	(whole, dec) = value.split(".")
-	draw.text((0,-2), whole + ".", font=font, fill=((255,100,100) if not color else color))
-	draw.text((5,6), dec[0:4], font=font, fill=((100,200,255) if not color else color))
-	draw.text((13,14), dec[4:8], font=font, fill=((200,200,55) if not color else color))
+	draw.text((0, -2 + top), whole + ".", font=font, fill=((255,100,100) if not color else color))
+	draw.text((5, 6 + top), dec[0:4], font=font, fill=((100,200,255) if not color else color))
+	draw.text((13, 14 + top), dec[4:8], font=font, fill=((200,200,55) if not color else color))
 	
 	# align image, push to LED grid, and wait
 	image=image.rotate(270)
@@ -202,7 +209,9 @@ def party(loops):
 # received new incoming transaction
 def newTx(txData):
 	global myTxBlocks
-	
+
+	# don't need to show balance if just a confirmation message
+	showBalance = False	
 	for tx in txData:
 		# only celebrate tx receive, but add confirmations to myTxBlocks
 		if tx['confirmations'] == 1:
@@ -211,14 +220,16 @@ def newTx(txData):
 		
 		# celebrate!
 		party(4)
+		showBalance = True
 
 		# now show our received amount
-		showValue(tx['amount'])
+		showValue( str(tx['amount']) )
 	
-	# done all transactions, show final total balance
-	party(1)
-	showValue("balance")
-	party(1)
+	# done with all transactions, show final total balance
+	if showBalance:
+		party(1)
+		showValue("balance")
+		party(1)
 
 
 # display bitcoin address QR code for tipping

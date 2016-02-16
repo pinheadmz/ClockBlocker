@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import numbers
 import decimal
 import json
 import bitcoinAuth
@@ -15,7 +16,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 # constants #
 #############
 
-txFile = '/home/pi/pybits/tx.txt'
+txFile = '/home/pi/pybits/data/tx.txt'
 
 
 ##############
@@ -34,11 +35,8 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 #############
 
 # because JSON dump hates decimals for soem reason
-def decToString(obj):
- 	if isinstance(obj, (decimal.Decimal, int, float)):
-		return str(obj)
-	else:
-		return obj
+def allToString(obj):
+	return str(obj)
 
 
 ########
@@ -67,7 +65,8 @@ txInfo = rpc_connection.gettransaction(txid)
 dataJson.append(txInfo)
 
 # convert back to string and write to file
-dataJson = json.dumps(dataJson, default=decToString)
+dataJson = json.dumps(dataJson, default=allToString)
+
 f.write(dataJson)
 
 # close file

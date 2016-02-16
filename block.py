@@ -17,8 +17,8 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 # constants #
 #############
 
-blockFile = '/home/pi/pybits/block_list.txt'
-peerFile = '/home/pi/pybits/peer_list.txt'
+blockFile = '/home/pi/pybits/data/block_list.txt'
+peerFile = '/home/pi/pybits/data/peer_list.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
