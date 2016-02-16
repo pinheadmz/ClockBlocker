@@ -112,9 +112,11 @@ buffer = []
 
 # this array stores hashes of blocks that confirms my incoming transactions
 myTxBlocks = []
-
-# TODO -- listtransactions in case we got confirmed before starting up (before newTx)
-
+# on startup, load 10 (bitcoin RPC call default) recent receive transactions into that array
+listTx = rpc_connection.listtransactions()
+for tx in listTx:
+	if tx['category'] == 'receive':
+		myTxBlocks.append(tx['blockhash'])
 
 
 #############
@@ -156,6 +158,8 @@ def checkKeyIn():
 		sys.exit()
 	elif key == "B" or key == "b":
 		showValue("balance")
+	elif key == "P" or key == "p":
+		party(2)
 
 
 # show wallet balance on screen
