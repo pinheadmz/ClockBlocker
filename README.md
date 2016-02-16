@@ -8,6 +8,11 @@ python-bitcoinrpc: https://github.com/jgarzik/python-bitcoinrpc (modified, inclu
 
 Adafruit RGB LED matrix driver: https://github.com/adafruit/rpi-rgb-led-matrix/ (modified, compiled and included in this git as rgbmatrix.so)
 
+PyQRCode: https://pypi.python.org/pypi/PyQRCode:
+```
+$ pip install pyqrcode
+```
+
 Bitcoin Core (or alt-client) with the following lines added to `~/.bitcoin/bitcoin.config`:
 ```
 blocknotify=python /PATH-TO-DIRECTORY/block.py %s

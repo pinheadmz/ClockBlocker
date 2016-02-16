@@ -11,8 +11,9 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 
 print "Loading 1st bitcoin address..."
 
-addr = rpc_connection.getnewaddress()
-code = pyqrcode.create(addr, error='M', version=3)
+#addr = rpc_connection.getnewaddress()
+addr = 'L45S4EjxBtD9He53GxqCvVPjk7NpU83PYVJgUVM7xqbLRVju9rTc'
+code = pyqrcode.create(addr, error='L', version=3)
 t = code.text(1)
 
 print addr
@@ -78,7 +79,7 @@ def showQR():
 	return True
 
 print "starting"
-showQR()
+#showQR()
 matrix.clear()
 print "done"
 

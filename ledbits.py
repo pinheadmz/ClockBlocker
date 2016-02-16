@@ -21,6 +21,9 @@ import select
 import tty
 import termios
 import random
+import Image
+import ImageDraw
+import ImageFont
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -49,7 +52,7 @@ HASH_X = 4
 HASH_Y = 15
 
 # size of block icons (squared)
-ICONSIZE = 4
+ICONSIZE = 3
 
 # mempool space
 MEM_ROWMIN = 27
@@ -75,7 +78,7 @@ MEMPOOLSCALE = 5
 # refresh rate in seconds
 REFRESH = 1
 
-# number of seconds to display QR code for tip
+# number of seconds to display QR code for tip, also balance and other texts
 QRTIME = 5
 
 
@@ -101,11 +104,18 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 # init LED grid, rows and chain length are both required parameters:
 matrix = Adafruit_RGBmatrix(32, 1)
 
+# load font
+font = ImageFont.load_path("/home/pi/pybits/fonts/pilfonts/timR08.pil")
+
 # this matrix buffers the LED grid output to avoid using clear() every frame
 buffer = []
 
 # this array stores hashes of blocks that confirms my incoming transactions
 myTxBlocks = []
+
+# TODO -- listtransactions in case we got confirmed before starting up (before newTx)
+
+
 
 #############
 # functions #
@@ -140,12 +150,55 @@ def checkKeyIn():
 		print "Interrupt caught waiting for keypress"
 		sys.exit()
 
-	if key == "T" or key == "t":
+	if key == "D" or key == "d":
 		showQR()
 	elif key == "Q" or key == "q":
 		sys.exit()
+	elif key == "B" or key == "b":
+		showValue("balance")
 
 
+# show wallet balance on screen
+def showValue(value):
+	#get the balance, default
+	if value == "balance":
+		value = str(rpc_connection.getbalance())
+		color = (50, 255, 50)
+	else:
+		color = False
+	
+	# init image palette 
+	image = Image.new('RGB', (32, 32))
+	draw = ImageDraw.Draw(image)
+
+	# break up digits and print text
+	(whole, dec) = value.split(".")
+	draw.text((0,-2), whole + ".", font=font, fill=((255,100,100) if not color else color))
+	draw.text((5,6), dec[0:4], font=font, fill=((100,200,255) if not color else color))
+	draw.text((13,14), dec[4:8], font=font, fill=((200,200,55) if not color else color))
+	
+	# align image, push to LED grid, and wait
+	image=image.rotate(270)
+	matrix.Clear()
+	matrix.SetImage(image.im.id, 0, 0)
+	time.sleep(QRTIME)
+
+
+# fun random color glittery mayhem party!
+def party(loops):
+	# celebrate!
+	for x in range(loops):
+		# color splatter
+		for y in range(400):
+			pix = [ random.randint(0,31), random.randint(0,31), random.randint(0,255), random.randint(0,255), random.randint(0,255) ]
+			matrix.SetPixel(pix[0],pix[1],pix[2],pix[3],pix[4])
+			time.sleep(.001)
+		# clear a few holes
+		for i in range(1000):
+			matrix.SetPixel (random.randint(0,31), random.randint(0,31),0,0,0)
+			time.sleep(.0005)
+			
+			
 # received new incoming transaction
 def newTx(txData):
 	global myTxBlocks
@@ -157,17 +210,15 @@ def newTx(txData):
 			continue
 		
 		# celebrate!
-		for x in range(4):
-			# color splatter
-			for y in range(400):
-				pix = [ random.randint(0,31), random.randint(0,31), random.randint(0,255), random.randint(0,255), random.randint(0,255) ]
-				matrix.SetPixel(pix[0],pix[1],pix[2],pix[3],pix[4])
-				time.sleep(.001)
-			# clear a few holes
-			for i in range(1000):
-				matrix.SetPixel (random.randint(0,31), random.randint(0,31),0,0,0)
-				time.sleep(.0005)
-	# TODO - display tx amounts and wallet total balance
+		party(4)
+
+		# now show our received amount
+		showValue(tx['amount'])
+	
+	# done all transactions, show final total balance
+	party(1)
+	showValue("balance")
+	party(1)
 
 
 # display bitcoin address QR code for tipping

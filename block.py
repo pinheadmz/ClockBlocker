@@ -127,6 +127,7 @@ def refreshPeers():
 ########
 # MAIN #
 ########
+print
 print "--"
 newBlock()
 refreshPeers()
