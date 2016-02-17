@@ -80,7 +80,7 @@ def newBlock():
 	print "New Block: " + height
 
 
-# refresh the peers list
+# refresh the peers list --  TODO ONLY LOOKUP IP for new peers
 def refreshPeers():
 	peers = []
 	

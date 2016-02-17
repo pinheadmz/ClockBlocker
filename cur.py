@@ -1,7 +1,7 @@
 import time
 import curses
 import atexit
-
+import os
 def cleanup():	
 	# reset all this crap to normal terminal settings
 	curses.nocbreak()
@@ -10,6 +10,7 @@ def cleanup():
 	print "bye!"
 atexit.register(cleanup)
 
+os.environ['TERM'] = 'xterm-256color'
 
 # window object needed for getch()
 stdscr = curses.initscr()

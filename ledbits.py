@@ -94,10 +94,13 @@ def cleanup():
 	print "bye!"
 atexit.register(cleanup)
 
+# make sure terminal setting is compatible with curses
+os.environ['TERM'] = 'xterm-256color'
+
 # init curses for text output and getch()
 stdscr = curses.initscr()
-curses.curs_set(0)
 curses.start_color()
+curses.curs_set(0)
 curses.noecho()
 curses.halfdelay(REFRESH * 10) # reset with nocbreak, blocking value is x 0.1 seconds
 MAXYX = stdscr.getmaxyx()
@@ -165,13 +168,15 @@ def checkKeyIn():
 		key = chr(keyNum)
 
 	if key == "D" or key == "d":
-		showQR()
+		deposit()
 	elif key == "Q" or key == "q":
 		sys.exit()
 	elif key == "B" or key == "b":
 		showValue("balance")
 	elif key == "P" or key == "p":
 		party(2)
+	elif key == "W" or key == "w":
+		withdraw()
 
 
 # use curses to output a line (or two) of text towards bottom of the screen
@@ -253,9 +258,8 @@ def newTx(txData):
 		party(1)
 
 
-# display bitcoin address QR code for tipping
-def showQR():
-	global rpc_connection
+# get an address to deposit money in
+def deposit():
 	printMsg("Loading bitcoin address...")
 
 	# connect to node and get new wallet address
@@ -264,17 +268,85 @@ def showQR():
 	except (socket.error, httplib.CannotSendRequest):
 		printMsg("getnewaddress http error", COLOR_RED)
 		return False
-	
-	# bypass rpc for testing
-	#addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
-	
-	# generate QR code and display on LED grid
+
+	# show off the new address!
 	printMsg(addr, COLOR_GREEN, 1)
-	code = pyqrcode.create(addr, error='M', version=3)
-	t = code.text(1)
+	showQR(addr, 'M')
+
+
+
+# get an address to deposit money in
+def withdraw():
+	printMsg("Loading unspent coins...")
+
+	# connect to node and get new wallet address
+	try:
+		list = rpc_connection.listunspent()
+	except (socket.error, httplib.CannotSendRequest):
+		printMsg("listunspent http error", COLOR_RED)
+		return False
+
+	# calculate balances of each spendable key in wallet
+	coins = {}
+	for addr in list:
+		if addr['address'] in coins:
+			coins[addr['address']] += addr['amount']
+		else:
+			coins[addr['address']] = addr['amount']
+
+	# display menu of coins to withdraw
+	stdscr.erase()
+	for i, key in enumerate(coins):
+		s = '%-3.4s%-40.40s%-13.13s' % (str(i) + ":", key, str(coins[key]))
+		stdscr.addstr(0 + i, 0, s)
+	stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw or [X] to exit")
+	stdscr.refresh()
 	
-	# print the actual QR code to terminal with 1's and 0's
-	#print t
+	# wait a bit longer this time
+	curses.halfdelay(10 * 10)
+	choice = stdscr.getch()
+	if choice != -1:
+		choiceChar = chr(choice)
+
+	# then reset to original value
+	curses.halfdelay(REFRESH * 10)
+
+	if choice == -1 or choiceChar == "x" or choiceChar == "X":
+		return False
+	else:
+		chosenAddr = coins.keys()[int(choiceChar)]
+		# allow long string of input:
+		curses.nocbreak()
+
+		# get password (echo is still off!)	
+		stdscr.addstr(0 + i + 2, 0, "Enter wallet password...")
+		pwd = stdscr.getstr()
+		
+		# reset to original value
+		curses.halfdelay(REFRESH * 10)
+		
+		# get that key from bitcoin
+		try:
+			checkPwd = rpc_connection.walletpassphrase(pwd, 60)
+		except JSONRPCException:
+			printMsg("Wallet passphrase error", COLOR_RED)
+			time.sleep(2)
+			return False
+		
+		privKey = rpc_connection.dumpprivkey(chosenAddr)
+		rpc_connection.walletlock()
+
+		# show off the new address!
+		printMsg(privKey, COLOR_GREEN, 1)
+		showQR(privKey, 'L')
+
+
+
+# display bitcoin address QR code for tipping
+def showQR(addr, errcorr):
+	# generate QR code and display on LED grid
+	code = pyqrcode.create(addr, error=errcorr, version=3)
+	t = code.text(1)
 	
 	row = 31
 	col = 0
