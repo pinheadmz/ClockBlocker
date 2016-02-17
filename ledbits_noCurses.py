@@ -9,7 +9,6 @@ try:
 except ImportError:
     import httplib
 import atexit
-import curses
 import pyqrcode
 import time
 import os
@@ -18,6 +17,9 @@ import random
 import socket
 import bitcoinAuth
 import sys
+import select
+import tty
+import termios
 import random
 import Image
 import ImageDraw
@@ -84,35 +86,17 @@ QRTIME = 5
 # initialize #
 ##############
 
-# runs on script exit, resets terminal settings
+# capture current terminal settings before setting to one character at a time
+old_settings = termios.tcgetattr(sys.stdin)
 def cleanup():
+	# reset terminal settings to normal expected behavior
+	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+	# clear LED grid
 	matrix.Clear()
-	# undo curses settings
-	curses.nocbreak()
-	curses.echo()
-	curses.endwin()
 	print "bye!"
 atexit.register(cleanup)
-
-# init curses for text output and getch()
-stdscr = curses.initscr()
-curses.curs_set(0)
-curses.start_color()
-curses.noecho()
-curses.halfdelay(REFRESH * 10) # reset with nocbreak, blocking value is x 0.1 seconds
-MAXYX = stdscr.getmaxyx()
-
-# color pairs for curses
-COLOR_GOLD = 1
-curses.init_pair(COLOR_GOLD, 166, 0)
-COLOR_LTBLUE = 2
-curses.init_pair(COLOR_LTBLUE, 45, 0)
-COLOR_GREEN = 3
-curses.init_pair(COLOR_GREEN, 34, 0)
-COLOR_WHITE = 4
-curses.init_pair(COLOR_WHITE, 15, 0)
-COLOR_RED = 5
-curses.init_pair(COLOR_RED, 160, 0)
+# one char at a time, no newline required
+tty.setcbreak(sys.stdin.fileno())
 
 # init the bitcoin RPC connection
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
@@ -158,11 +142,15 @@ def bufferDraw():
 
 # check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
-	keyNum = stdscr.getch()
-	if keyNum == -1:
-		return False
-	else:
-		key = chr(keyNum)
+	try:
+		sel = select.select([sys.stdin], [], [], REFRESH)
+		if sel[0]:
+			key = sys.stdin.read(1)
+		else:
+			key = False
+	except KeyboardInterrupt:
+		print "Interrupt caught waiting for keypress"
+		sys.exit()
 
 	if key == "D" or key == "d":
 		showQR()
@@ -173,11 +161,6 @@ def checkKeyIn():
 	elif key == "P" or key == "p":
 		party(2)
 
-
-# use curses to output a line (or two) of text towards bottom of the screen
-def printMsg(msg, color=COLOR_WHITE, line=0):
-	stdscr.addstr(MAXYX[0]-4 + line, 0, msg, curses.color_pair(color))
-	stdscr.refresh()
 
 # show wallet balance on screen
 def showValue(value):
@@ -256,20 +239,21 @@ def newTx(txData):
 # display bitcoin address QR code for tipping
 def showQR():
 	global rpc_connection
-	printMsg("Loading bitcoin address...")
+	print
+	print "Loading bitcoin address..."
 
 	# connect to node and get new wallet address
 	try:
 		addr = rpc_connection.getnewaddress()
 	except (socket.error, httplib.CannotSendRequest):
-		printMsg("getnewaddress http error", COLOR_RED)
+		print "getnewaddress http error"
 		return False
 	
 	# bypass rpc for testing
 	#addr = '1CepbXDXPeJTsk9PUUKkXwfqcyDgmo1qoE'
 	
 	# generate QR code and display on LED grid
-	printMsg(addr, COLOR_GREEN, 1)
+	print addr
 	code = pyqrcode.create(addr, error='M', version=3)
 	t = code.text(1)
 	
@@ -483,7 +467,7 @@ while True:
 	try:
 		mempoolInfo = rpc_connection.getmempoolinfo()
 	except (socket.error, httplib.CannotSendRequest):
-		printMsg("getmempoolinfo http error", COLOR_RED)
+		print "getmempoolinfo http error"
 		continue	
 	numTx = mempoolInfo['size']
 	memBytes = mempoolInfo['bytes']
@@ -564,40 +548,18 @@ while True:
 	######################################
 	# PRINT ADDITIONAL OUTPUT TO CONSOLE #
 	######################################
-	stdscr.erase()
-	
-	stdscr.addstr(0, 0, "Block height: " + str(latestHeight))
-	
-	stdscr.addstr(2, 0, "Blocks until next difficulty adjustment: " + str(2016-int(latestHeight)%2016))
-	
-	stdscr.addstr(4, 0, "Blocks until next subsidy halvening: " + str(210000 - int(latestHeight)%210000))
-	
-	stdscr.addstr(6, 0, "Mempool TX's: " + str(numTx) + " -- Memory: " + str(memBytes) + " bytes")
-	
-	stdscr.addstr(8, 0, "Connected peers:", curses.A_UNDERLINE)
-	for i, peer in enumerate(peerData):
-		# color each line depending on type of node
-		type = peer['subver'].lower()
-		if "classic" in type:
-			color = COLOR_GOLD
-		elif "unlimited" in type:
-			color = COLOR_LTBLUE
-		elif "xt" in type:
-			color = COLOR_GREEN
-		elif "satoshi" not in type:
-			color = COLOR_RED
-		else:
-			color = COLOR_WHITE			
+	os.system('clear')
+	print "Block height:", latestHeight
+	print
+	print "Blocks until next difficulty adjustment:", 2016-int(latestHeight)%2016
+	print
+	print "Blocks until next subsidy halvening:", 210000 - int(latestHeight)%210000
+	print
+	print "Mempool TX's:", numTx, " -- Memory:", memBytes, "bytes"	
+	print
+	print "Connected peers:"
+	for peer in peerData:
+		print '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 
-		s =  '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
-		stdscr.addstr(8 + i + 1, 0, s, curses.color_pair(color))
-
-	menu = '%-12.12s%-12.12s%-10.10s%-12.12s%-12.12s%-12.12s' % ("[D]eposit","[W]ithdraw","[S]end","[B]alance","[P]arty!","[Q]uit")
-	stdscr.addstr(MAXYX[0]-1, 0, menu)
-
-	
-	# push text buffer to terminal display
-	stdscr.refresh()
-	
 	# check for keyboard input and pause before display refresh
 	checkKeyIn()
