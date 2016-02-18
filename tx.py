@@ -71,6 +71,6 @@ f.write(dataJson)
 
 # close file
 f.close()
-print
-print "--"
-print "New Tx!"
+#print
+#print "--"
+#print "New Tx!"

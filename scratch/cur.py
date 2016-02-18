@@ -10,7 +10,7 @@ def cleanup():
 	print "bye!"
 atexit.register(cleanup)
 
-os.environ['TERM'] = 'xterm-256color'
+#os.environ['TERM'] = 'xterm-256color'
 
 # window object needed for getch()
 stdscr = curses.initscr()
@@ -33,7 +33,7 @@ while True:
 	stdscr.addstr(3, 3, b, curses.color_pair(1))
 '''
 
-'''
+
 y = 0
 x = 0
 for c in range(254):
@@ -46,7 +46,7 @@ for c in range(254):
 	else:
 		x = 0
 		y += 1
-'''
+
 '''
 for c in range(255):
 	curses.init_pair(c, c, 0)

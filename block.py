@@ -4,10 +4,9 @@
 # dependencies #
 ################
 
-import urllib2
+import peers
 import json
 import bitcoinAuth
-import ipInfoAuth
 from sys import argv
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -18,7 +17,6 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 #############
 
 blockFile = '/home/pi/pybits/data/block_list.txt'
-peerFile = '/home/pi/pybits/data/peer_list.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
@@ -77,57 +75,13 @@ def newBlock():
 	# close file
 	f.close()
 
-	print "New Block: " + height
-
-
-# refresh the peers list --  TODO ONLY LOOKUP IP for new peers
-def refreshPeers():
-	peers = []
-	
-	# get peerinfo from bitcoind
-	peerInfo = rpc_connection.getpeerinfo()
-	
-	# request location from IP info server and fill out info for display
-	for peer in peerInfo:
-		thisPeer = {}
-		thisPeer['addr'] = peer['addr']
-		thisPeer['inbound'] = peer['inbound']
-		thisPeer['subver'] = peer['subver']
-		
-		# get the location info from IP API
-		thisIP = thisPeer['addr'].split(':')[0]
-		
-		try:
-			response = urllib2.urlopen('http://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP)
-		except urllib2.URLError:
-			print "Get IP Info error"
-			response = False	
-		
-		if response:
-			responseJson = json.load(response)	
-		else:
-			responseJson = False
-		
-		thisPeer['country'] = responseJson['countryName'] if response else ''
-		thisPeer['region'] = responseJson['regionName'] if response else ''
-		thisPeer['city'] = responseJson['cityName'] if response else ''
-
-		peers.append(thisPeer)
-	
-	# open file or create new
-	p = open(peerFile, 'w')
-	
-	# write json of peer info and close
-	peerJson = json.dumps(peers)	
-	p.write(peerJson)
-	p.close()
-	print "Peers updated"
+	#print "New Block: " + height
 
 
 ########
 # MAIN #
 ########
-print
-print "--"
+#print
+#print "--"
 newBlock()
-refreshPeers()
+peers.refreshPeers()

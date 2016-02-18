@@ -22,6 +22,7 @@ import random
 import Image
 import ImageDraw
 import ImageFont
+import peers
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -95,7 +96,8 @@ def cleanup():
 atexit.register(cleanup)
 
 # make sure terminal setting is compatible with curses
-os.environ['TERM'] = 'xterm-256color'
+# apparently this is really bad practice, bypass
+#os.environ['TERM'] = 'xterm-256color'
 
 # init curses for text output and getch()
 stdscr = curses.initscr()
@@ -177,12 +179,17 @@ def checkKeyIn():
 		party(2)
 	elif key == "W" or key == "w":
 		withdraw()
+	elif key == "R" or key == "r":
+		res = peers.refreshPeers()
+		printMsg(res)
+		time.sleep(2)
 
 
 # use curses to output a line (or two) of text towards bottom of the screen
 def printMsg(msg, color=COLOR_WHITE, line=0):
 	stdscr.addstr(MAXYX[0]-4 + line, 0, msg, curses.color_pair(color))
 	stdscr.refresh()
+
 
 # show wallet balance on screen
 def showValue(value):
@@ -319,7 +326,7 @@ def withdraw():
 		curses.nocbreak()
 
 		# get password (echo is still off!)	
-		stdscr.addstr(0 + i + 2, 0, "Enter wallet password...")
+		stdscr.addstr(0 + i + 3, 0, "Enter wallet password...")
 		pwd = stdscr.getstr()
 		
 		# reset to original value
@@ -664,7 +671,7 @@ while True:
 		s =  '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 		stdscr.addstr(8 + i + 1, 0, s, curses.color_pair(color))
 
-	menu = '%-12.12s%-12.12s%-10.10s%-12.12s%-12.12s%-12.12s' % ("[D]eposit","[W]ithdraw","[S]end","[B]alance","[P]arty!","[Q]uit")
+	menu = "[D]eposit   [W]ithdraw   [S]end   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
 
 	
