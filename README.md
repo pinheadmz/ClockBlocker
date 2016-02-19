@@ -4,16 +4,16 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 -
 ### Dependencies:
 
-python-bitcoinrpc: https://github.com/jgarzik/python-bitcoinrpc (modified, included in this git as bitcoinrpc.py)
+* python-bitcoinrpc: https://github.com/jgarzik/python-bitcoinrpc (modified, included in this git as bitcoinrpc.py)
 
-Adafruit RGB LED matrix driver: https://github.com/adafruit/rpi-rgb-led-matrix/ (modified, compiled and included in this git as rgbmatrix.so)
+* Adafruit RGB LED matrix driver: https://github.com/adafruit/rpi-rgb-led-matrix/ (modified, compiled and included in this git as rgbmatrix.so)
 
-PyQRCode: https://pypi.python.org/pypi/PyQRCode:
+* PyQRCode: https://pypi.python.org/pypi/PyQRCode:
 ```
 $ pip install pyqrcode
 ```
 
-Bitcoin Core (or alt-client) with the following lines added to `~/.bitcoin/bitcoin.config`:
+* Bitcoin Core (or alt-client) with the following lines added to `~/.bitcoin/bitcoin.config`:
 ```
 blocknotify=python /PATH-TO-DIRECTORY/block.py %s
 walletnotify=python /PATH-TO-DIRECTORY/tx.py %s
@@ -29,26 +29,26 @@ other tips for running a full node on an RPi:
 * use an SSD drive (not a USB memory stick) for the blockchain
 * Bitcoin Core version 0.12 employs `libsecp256k1` which improves block validation time a great deal
 
-Modify the "constants" lines in `block.py`, `tx.py`, and `ledbits.py` so the file paths are correct:
+Modify the "constants" lines in `block.py`, `peers.py`, `tx.py`, and `ledbits.py` so the file paths are correct:
 ```
 #############
 # constants #
 #############
 
-blockFile = '/PATH-TO-DIRECTORY/block_list.txt'
-peerFile = '/PATH-TO-DIRECTORY/peer_list.txt'
-txFile = '/PATH-TO-DIRECTORY/tx.txt'
+blockFile = '/PATH-TO-DIRECTORY/data/block_list.txt'
+peerFile = '/PATH-TO-DIRECTORY/data/peer_list.txt'
+txFile = '/PATH-TO-DIRECTORY/data/tx.txt'
 ```
 
 
 ### API passwords:
 
-create file `bitcounAuth.py` which contains:
+* Bitcoin: create file `bitcounAuth.py` which contains:
 ```
 USER = "YOUR-BITCOIN-RPC-USERNAME"
 PW = "YOUR-BITCOIN-RPC-PASSWORD"
 ```
-Sign up for API key at http://www.ipinfodb.com/ip_location_api.php
+* IP geo-location service: Sign up for API key at http://www.ipinfodb.com/ip_location_api.php
 
 ...then create file `ipInfoAuth.py` which contains:
 ```

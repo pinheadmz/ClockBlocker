@@ -87,11 +87,12 @@ QRTIME = 5
 
 # runs on script exit, resets terminal settings
 def cleanup():
-	matrix.Clear()
 	# undo curses settings
 	curses.nocbreak()
 	curses.echo()
 	curses.endwin()
+	
+	matrix.Clear()
 	print "bye!"
 atexit.register(cleanup)
 
@@ -102,22 +103,28 @@ atexit.register(cleanup)
 # init curses for text output and getch()
 stdscr = curses.initscr()
 curses.start_color()
-curses.curs_set(0)
 curses.noecho()
 curses.halfdelay(REFRESH * 10) # reset with nocbreak, blocking value is x 0.1 seconds
+# store window dimensions
 MAXYX = stdscr.getmaxyx()
+# some terminals don't like invisible cursors
+try:
+	curses.curs_set(0)
+	invisCursor = True
+except curses.error:
+	invisCursor = False
 
-# color pairs for curses
+# color pairs for curses, keeping all colors < 8 for dumb terminals
 COLOR_GOLD = 1
-curses.init_pair(COLOR_GOLD, 166, 0)
+curses.init_pair(COLOR_GOLD, 3, 0)
 COLOR_LTBLUE = 2
-curses.init_pair(COLOR_LTBLUE, 45, 0)
+curses.init_pair(COLOR_LTBLUE, 6, 0)
 COLOR_GREEN = 3
-curses.init_pair(COLOR_GREEN, 34, 0)
+curses.init_pair(COLOR_GREEN, 2, 0)
 COLOR_WHITE = 4
-curses.init_pair(COLOR_WHITE, 15, 0)
+curses.init_pair(COLOR_WHITE, 7, 0)
 COLOR_RED = 5
-curses.init_pair(COLOR_RED, 160, 0)
+curses.init_pair(COLOR_RED, 1, 0)
 
 # init the bitcoin RPC connection
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
@@ -160,6 +167,9 @@ def bufferDraw():
 		for y in range(32):
 			matrix.SetPixel(x, y, buffer[x][y][0], buffer[x][y][1], buffer[x][y][2])
 
+# stash cursor in the bottom right corner in case terminal won't invisiblize it
+def hideCursor():
+	stdscr.addstr(MAXYX[0]-1, MAXYX[1]-1, "")
 
 # check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
@@ -188,6 +198,7 @@ def checkKeyIn():
 # use curses to output a line (or two) of text towards bottom of the screen
 def printMsg(msg, color=COLOR_WHITE, line=0):
 	stdscr.addstr(MAXYX[0]-4 + line, 0, msg, curses.color_pair(color))
+	hideCursor()
 	stdscr.refresh()
 
 
@@ -230,8 +241,8 @@ def party(loops):
 	for x in range(loops):
 		# color splatter
 		for y in range(400):
-			pix = [ random.randint(0,31), random.randint(0,31), random.randint(0,255), random.randint(0,255), random.randint(0,255) ]
-			matrix.SetPixel(pix[0],pix[1],pix[2],pix[3],pix[4])
+			pix = (random.randint(0,31), random.randint(0,31), random.randint(0,255), random.randint(0,255), random.randint(0,255))
+			matrix.SetPixel(*pix)
 			time.sleep(.001)
 		# clear a few holes
 		for i in range(1000):
@@ -307,6 +318,7 @@ def withdraw():
 		s = '%-3.4s%-40.40s%-13.13s' % (str(i) + ":", key, str(coins[key]))
 		stdscr.addstr(0 + i, 0, s)
 	stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw or [X] to exit")
+	hideCursor()
 	stdscr.refresh()
 	
 	# wait a bit longer this time
@@ -327,6 +339,7 @@ def withdraw():
 
 		# get password (echo is still off!)	
 		stdscr.addstr(0 + i + 3, 0, "Enter wallet password...")
+		hideCursor()
 		pwd = stdscr.getstr()
 		
 		# reset to original value
@@ -573,7 +586,9 @@ while True:
 	blockData = json.loads(d)
 	f.close()
 	
-	# load peers info from file created by blocks.py
+	# load peers info from file
+	if not os.path.isfile(peerFile):
+		peers.refreshPeers()
 	p = open(peerFile,'r')
 	pd = p.read()
 	peerData = json.loads(pd)
@@ -674,7 +689,9 @@ while True:
 	menu = "[D]eposit   [W]ithdraw   [S]end   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
 
-	
+	# if cursor is visible get it out of the way
+	hideCursor()
+
 	# push text buffer to terminal display
 	stdscr.refresh()
 	
