@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import os
 import numbers
 import decimal
 import json
@@ -44,9 +45,9 @@ def allToString(obj):
 ########
 
 # open file or create new
-f = open(txFile,'a')
+f = open(txFile,'a', 0o777)
 f.close()
-f = open(txFile,'r+')
+f = open(txFile,'r+', 0o777)
 
 # read data from file
 data = f.read()
@@ -71,6 +72,7 @@ f.write(dataJson)
 
 # close file
 f.close()
+
 #print
 #print "--"
 #print "New Tx!"

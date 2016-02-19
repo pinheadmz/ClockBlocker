@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import os
 import urllib2
 import json
 import bitcoinAuth
@@ -88,9 +89,6 @@ def refreshPeers():
 		
 		newPeers += 1
 		updatedPeers.append(thisPeer)
-	
-	# open file or create new
-	p = open(peerFile, 'w')
 	
 	# write json of peer info and close
 	peerJson = json.dumps(updatedPeers)	

@@ -51,7 +51,7 @@ HASH_X = 4
 HASH_Y = 15
 
 # size of block icons (squared)
-ICONSIZE = 3
+ICONSIZE = 4
 
 # mempool space
 MEM_ROWMIN = 27
@@ -143,7 +143,7 @@ myTxBlocks = []
 # on startup, load 10 (bitcoin RPC call default) recent receive transactions into that array
 listTx = rpc_connection.listtransactions()
 for tx in listTx:
-	if tx['category'] == 'receive':
+	if tx['category'] == 'receive' and tx['confirmations'] > 0:
 		myTxBlocks.append(tx['blockhash'])
 
 
@@ -401,10 +401,10 @@ def drawDiff(height):
 	# last dot is a fraction
 	lastDot = float(since%dotValue) / dotValue
 	
-	for x in range(drawDots):
-		if (x+1) == drawDots:
-			# last dot will indicate fraction from blue (emptiest) to red (fullest)
-			bufferPixel(row, col, int(lastDot * 255), 0, 255 - int(lastDot * 255))
+	for x in range(drawDots + 1):
+		if x == drawDots:
+			# last dot will indicate fraction of the regular color
+			bufferPixel(row, col, int(lastDot * 100), 255-int(lastDot*255), int(lastDot * 200))
 		else:
 			# regular "full" dot -- purple?
 			bufferPixel(row, col, 100, 0, 200)
@@ -443,12 +443,12 @@ def drawSubsidy(height):
 	# last dot is a fraction
 	lastDot = float(since%dotValue) / dotValue
 	
-	for x in range(drawDots):
-		if (x+1) == drawDots:
-			# last dot will indicate fraction from green (emptiest) to blue (fullest)
-			bufferPixel(row, col, 0, 255 - int(lastDot * 255), int(lastDot * 255))
+	for x in range(drawDots + 1):
+		if x == drawDots:
+			# last dot will indicate fraction of the regular color
+			bufferPixel(row, col, 255 - int(lastDot * 255), int(lastDot * 200), int(lastDot * 100))
 		else:
-			# regular "full" dot -- purple?
+			# regular "full" dot -- aqua?
 			bufferPixel(row, col, 0, 200, 100)
 		'''
 		if row > SUB_ROWMAX:

@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import os
 import peers
 import json
 import bitcoinAuth
@@ -38,11 +39,12 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 #############
 
 # get info about the new block, all we know is its hash from bitcoind
+# -- TODO: if were creating the file check the block time in the blockchain
 def newBlock():
 	# open file or create new
-	f = open(blockFile,'a')
+	f = open(blockFile,'a', 0o777)
 	f.close()
-	f = open(blockFile,'r+')
+	f = open(blockFile,'r+', 0o777)
 
 	# read data from file
 	data = f.read()
