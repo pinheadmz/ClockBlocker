@@ -581,6 +581,10 @@ while True:
 	memBytes = mempoolInfo['bytes']
 	
 	# load recent block info from file created by blocks.py
+	if not os.path.isfile(blockFile):
+		printMsg("No block history file, loading best block...", COLOR_RED)
+		bestHash = rpc_connection.getbestblockhash()
+		os.system("python block.py " + str(bestHash))
 	f = open(blockFile,'r')
 	d = f.read()
 	blockData = json.loads(d)

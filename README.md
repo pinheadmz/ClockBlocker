@@ -43,7 +43,7 @@ txFile = '/PATH-TO-DIRECTORY/data/tx.txt'
 
 ### API passwords:
 
-* Bitcoin: create file `bitcounAuth.py` which contains:
+* Bitcoin: create file `bitcoinAuth.py` which contains:
 ```
 USER = "YOUR-BITCOIN-RPC-USERNAME"
 PW = "YOUR-BITCOIN-RPC-PASSWORD"
