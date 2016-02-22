@@ -315,7 +315,7 @@ def withdraw():
 	# display menu of coins to withdraw
 	stdscr.erase()
 	for i, key in enumerate(coins):
-		s = '%-3.4s%-40.40s%-13.13s' % (str(i) + ":", key, str(coins[key]))
+		s = '%-3.4s%-13.13s%-40.40s' % (str(i) + ":", str(coins[key]), key)
 		stdscr.addstr(0 + i, 0, s)
 	stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw or [X] to exit")
 	hideCursor()
@@ -690,7 +690,7 @@ while True:
 		s =  '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 		stdscr.addstr(8 + i + 1, 0, s, curses.color_pair(color))
 
-	menu = "[D]eposit   [W]ithdraw   [S]end   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
+	menu = "[D]eposit   [W]ithdraw   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
 
 	# if cursor is visible get it out of the way
