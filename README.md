@@ -29,7 +29,10 @@ other tips for running a full node on an RPi:
 * use an SSD drive (not a USB memory stick) for the blockchain
 * Bitcoin Core version 0.12 employs `libsecp256k1` which improves block validation time a great deal
 
-Modify the "constants" lines in `block.py`, `peers.py`, `tx.py`, and `ledbits.py` so the file paths are correct:
+
+### Installation:
+
+Clone this repository, then modify the "constants" lines in `block.py`, `peers.py`, `tx.py`, and `ledbits.py` so the file paths are correct:
 ```
 #############
 # constants #
@@ -56,3 +59,15 @@ api_username = 'YOUR-USERNAME'
 api_pw = 'YOUR-PASSWORD'
 api_key = 'YOUR-API-KEY'
 ```
+
+### Hardware:
+Here's a "wishlist" I made on Adafruit (accepts Bitcoin!) with most the components I used for the build:
+
+https://www.adafruit.com/wishlists/394607
+
+A few of these items might be found cheaper on other sites, but this is overall the shopping list.
+I didn't include HDMI or USB cables, or the materials I used in my own "custom" power distributor, but that Adafruit 5A power supply is enough to run the entire system.
+
+Here's the SSD I'm using for the blockchain:
+
+http://www.amazon.com/gp/product/B00EZ2FRU2
