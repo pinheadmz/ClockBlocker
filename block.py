@@ -41,12 +41,15 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 # get info about the new block, all we know is its hash from bitcoind
 # -- TODO: if were creating the file check the block time in the blockchain
 def newBlock():
-	# open file or create new
-	f = open(blockFile,'a', 0o777)
-	f.close()
-	f = open(blockFile,'r+', 0o777)
-
-	# read data from file
+	# create new file if missing
+	if not os.path.isfile(blockFile):
+		f = os.open(blockFile, os.O_CREAT)
+		# script will be run both as root and user
+		os.fchmod(f, 0777)
+		os.close(f)
+	
+	# open file and read data
+	f = open(blockFile,'r+')
 	data = f.read()
 	if data:
 		dataJson = json.loads(data)
@@ -73,6 +76,7 @@ def newBlock():
 	# convert back to string and write to file
 	dataJsonString = json.dumps(dataJson)
 	f.write(dataJsonString)
+	f.truncate()
 
 	# close file
 	f.close()

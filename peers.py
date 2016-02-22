@@ -33,12 +33,15 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 
 # refresh the peers list --  TODO ONLY LOOKUP IP for new peers
 def refreshPeers():
-	# open file or create new
-	p = open(peerFile, 'a')
-	p.close()
+	# create new file if missing
+	if not os.path.isfile(peerFile):
+		p = os.open(peerFile, os.O_CREAT)
+		# script will be run both as root and user
+		os.fchmod(p, 0777)
+		os.close(p)
+
+	# open file and read data
 	p = open(peerFile, 'r+')
-	
-	# read data from file
 	oldPeerData = p.read()
 	if oldPeerData:
 		peerDataJson = json.loads(oldPeerData)
@@ -93,5 +96,6 @@ def refreshPeers():
 	# write json of peer info and close
 	peerJson = json.dumps(updatedPeers)	
 	p.write(peerJson)
+	p.truncate()
 	p.close()
 	return "Peers list refreshed: " + str(newPeers) + " updated, " + str(totalPeers) + " total"

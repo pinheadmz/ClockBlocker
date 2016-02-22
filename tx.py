@@ -44,12 +44,15 @@ def allToString(obj):
 # main #
 ########
 
-# open file or create new
-f = open(txFile,'a', 0o777)
-f.close()
-f = open(txFile,'r+', 0o777)
+# create new file if missing
+if not os.path.isfile(blockFile):
+	f = os.open(txFile, os.O_CREAT)
+	# script will be run both as root and user
+	os.fchmod(f, 0777)
+	os.close(f)
 
-# read data from file
+# open file and read data
+f = open(txFile,'r+')
 data = f.read()
 if data:
 	dataJson = json.loads(data)
@@ -69,6 +72,7 @@ dataJson.append(txInfo)
 dataJson = json.dumps(dataJson, default=allToString)
 
 f.write(dataJson)
+f.truncate()
 
 # close file
 f.close()
