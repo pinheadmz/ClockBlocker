@@ -13,7 +13,7 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 $ pip install pyqrcode
 ```
 
-* Bitcoin Core (or alt-client) with the following lines added to `~/.bitcoin/bitcoin.config`:
+* Bitcoin Core (or alt-client, check out http://raspnode.com/diy.html) with the following lines added to `~/.bitcoin/bitcoin.config`:
 ```
 blocknotify=python /PATH-TO-DIRECTORY/block.py %s
 walletnotify=python /PATH-TO-DIRECTORY/tx.py %s
@@ -66,7 +66,7 @@ Here's a "wishlist" I made on Adafruit (accepts Bitcoin!) with most the componen
 https://www.adafruit.com/wishlists/394607
 
 A few of these items might be found cheaper on other sites, but this is overall the shopping list.
-I didn't include HDMI or USB cables, or the materials I used in my own "custom" power distributor, but that Adafruit 5A power supply is enough to run the entire system.
+I didn't include HDMI or USB cables, or the materials I used in my own "custom" power distributor, but that Adafruit 10A power supply is enough to run the entire system.
 
 Here's the SSD I'm using for the blockchain:
 
