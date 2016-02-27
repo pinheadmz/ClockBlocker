@@ -20,7 +20,7 @@ numTx = mempoolInfo['size']
 mempoolSize = mempoolInfo['bytes']/float(1000000)
 
 # load recent block info from file
-f = open('block_list.txt','r')
+f = open('data/block_list.txt','r')
 d = f.read()
 blockData = json.loads(d)
 f.close()

@@ -45,7 +45,7 @@ def allToString(obj):
 ########
 
 # create new file if missing
-if not os.path.isfile(blockFile):
+if not os.path.isfile(txFile):
 	f = os.open(txFile, os.O_CREAT)
 	# script will be run both as root and user
 	os.fchmod(f, 0777)
