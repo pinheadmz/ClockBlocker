@@ -1,4 +1,5 @@
 data/
+scratch/
 bitcoinAuth.py
 ipInfoAuth.py
 *.pyc

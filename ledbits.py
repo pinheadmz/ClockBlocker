@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/sudo python
 
 ################
 # dependencies #
@@ -179,17 +179,17 @@ def checkKeyIn():
 	else:
 		key = chr(keyNum)
 
-	if key == "D" or key == "d":
+	if key in ("d", "D"):
 		deposit()
-	elif key == "Q" or key == "q":
+	elif key in ("q", "Q"):
 		sys.exit()
-	elif key == "B" or key == "b":
+	elif key in ("b", "B"):
 		showValue("balance")
-	elif key == "P" or key == "p":
+	elif key in ("p", "P"):
 		party(2)
-	elif key == "W" or key == "w":
+	elif key in ("w", "W"):
 		withdraw()
-	elif key == "R" or key == "r":
+	elif key in ("r", "R"):
 		res = peers.refreshPeers()
 		printMsg(res)
 		time.sleep(2)
@@ -258,7 +258,7 @@ def newTx(txData):
 	showBalance = False	
 	for tx in txData:
 		# only celebrate tx receive, but add confirmations to myTxBlocks
-		if tx['confirmations'] == 1:
+		if tx['confirmations'] > 0:
 			myTxBlocks.append( tx['blockhash'] )
 			continue
 		
@@ -292,48 +292,41 @@ def deposit():
 	showQR(addr, 'M')
 
 
-
-# get an address to deposit money in
-def withdraw():
-	printMsg("Loading unspent coins...")
-
-	# connect to node and get new wallet address
-	try:
-		list = rpc_connection.listunspent()
-	except (socket.error, httplib.CannotSendRequest):
-		printMsg("listunspent http error", COLOR_RED)
-		return False
-
-	# calculate balances of each spendable key in wallet
-	coins = {}
-	for addr in list:
-		if addr['address'] in coins:
-			coins[addr['address']] += addr['amount']
-		else:
-			coins[addr['address']] = addr['amount']
+# called by withdraw() to display segment of a list as a menu
+def withdrawMenu(coins, offset = 0):
+	# display 10 coins at a time
+	menuCoins = dict(coins.items()[0 + offset : 10 + offset])
 
 	# display menu of coins to withdraw
 	stdscr.erase()
-	for i, key in enumerate(coins):
-		s = '%-3.4s%-13.13s%-40.40s' % (str(i) + ":", str(coins[key]), key)
+	for i, key in enumerate(menuCoins):
+		s = '%-3.4s%-13.13s%-40.40s' % (str(i) + ":", str(menuCoins[key]), key)
 		stdscr.addstr(0 + i, 0, s)
-	stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw or [X] to exit")
+	stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw, [P]age next, or e[X]it")
 	hideCursor()
 	stdscr.refresh()
 	
 	# wait a bit longer this time
 	curses.halfdelay(10 * 10)
 	choice = stdscr.getch()
-	if choice != -1:
+	if 48 <= choice <= 57:
+		choiceChar = int(chr(choice))
+	elif choice != -1:
 		choiceChar = chr(choice)
+	else:
+		choiceChar = choice
 
 	# then reset to original value
 	curses.halfdelay(REFRESH * 10)
 
-	if choice == -1 or choiceChar == "x" or choiceChar == "X":
+	# action based on user input
+	if choiceChar in (-1, "x", "X"):
 		return False
-	else:
-		chosenAddr = coins.keys()[int(choiceChar)]
+	elif choiceChar in ("p", "P"):
+		offset = offset + 10 if offset + 10 < len(coins) else 0
+		withdrawMenu(coins, offset)		
+	elif isinstance(choiceChar, int) and int(choiceChar) <= len(menuCoins) - 1:
+		chosenAddr = menuCoins.keys()[int(choiceChar)]
 		# allow long string of input:
 		curses.nocbreak()
 
@@ -359,7 +352,33 @@ def withdraw():
 		# show off the new address!
 		printMsg(privKey, COLOR_GREEN, 1)
 		showQR(privKey, 'L')
+	else:
+		printMsg("Invalid selection", COLOR_RED)
+		time.sleep(2)
+		return False
 
+
+# list addresses with unspent coins and reveal selected private key by QR code
+def withdraw():
+	printMsg("Loading unspent coins...")
+
+	# connect to node and get all unspent outputs
+	try:
+		list = rpc_connection.listunspent(0)
+	except (socket.error, httplib.CannotSendRequest):
+		printMsg("listunspent http error", COLOR_RED)
+		return False
+
+	# calculate balances of each spendable key in wallet
+	coins = {}
+	for addr in list:
+		if addr['address'] in coins:
+			coins[addr['address']] += addr['amount']
+		else:
+			coins[addr['address']] = addr['amount']
+	
+	# send unspent coins list to the recursive paging menu function
+	withdrawMenu(coins)
 
 
 # display bitcoin address QR code for tipping
@@ -673,22 +692,35 @@ while True:
 	stdscr.addstr(6, 0, "Mempool TX's: " + str(numTx) + " -- Memory: " + str(memBytes) + " bytes")
 	
 	stdscr.addstr(8, 0, "Connected peers:", curses.A_UNDERLINE)
-	for i, peer in enumerate(peerData):
+	line = 0
+	for peer in peerData:
 		# color each line depending on type of node
-		type = peer['subver'].lower()
-		if "classic" in type:
+		userAgent = peer['subver'].lower()
+		if "classic" in userAgent:
 			color = COLOR_GOLD
-		elif "unlimited" in type:
+		elif "unlimited" in userAgent:
 			color = COLOR_LTBLUE
-		elif "xt" in type:
+		elif "xt" in userAgent:
 			color = COLOR_GREEN
-		elif "satoshi" not in type:
+		elif "satoshi" not in userAgent:
 			color = COLOR_RED
 		else:
 			color = COLOR_WHITE			
 
+		# some subver's have sub-SUB-vers! eg Bitcoin Unlimited
+		subsubver = peer['subver'].split('(')
+		peer['subver'] = subsubver[0]
+
 		s =  '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
-		stdscr.addstr(8 + i + 1, 0, s, curses.color_pair(color))
+		stdscr.addstr(8 + line + 1, 0, s, curses.color_pair(color))
+		
+		# add subsubver on new line if present
+		if len(subsubver) > 1:
+			line += 1
+			s = '%-25.24s%-27.26s' % ('', '(' + subsubver[1])
+			stdscr.addstr(8 + line + 1, 0, s, curses.color_pair(color))
+
+		line += 1
 
 	menu = "[D]eposit   [W]ithdraw   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
