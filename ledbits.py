@@ -146,6 +146,8 @@ for tx in listTx:
 	if tx['category'] == 'receive' and tx['confirmations'] > 0:
 		myTxBlocks.append(tx['blockhash'])
 
+# on startup, get my own user agent
+myUserAgent = rpc_connection.getnetworkinfo()['subversion']
 
 #############
 # functions #
@@ -724,7 +726,11 @@ while True:
 
 	menu = "[D]eposit   [W]ithdraw   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
-
+	
+	# our own user agent goes up top
+	uaLength = len(myUserAgent)
+	stdscr.addstr(0, MAXYX[1] - uaLength, myUserAgent)
+	
 	# if cursor is visible get it out of the way
 	hideCursor()
 
