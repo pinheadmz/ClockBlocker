@@ -23,6 +23,7 @@ import Image
 import ImageDraw
 import ImageFont
 import peers
+import copy
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -45,6 +46,16 @@ DIM_LOW = 100
 
 # amount of time each LED row represents in seconds for block icons
 TIMESCALE = 30
+
+# maximum size of block in block info mode (in bytes)
+MAX_BLOCKSIZE = 1000000
+
+# color of blocks in block info mode
+BLOCK_VERSION_COLOR = {"4" : (200, 100, 50), "805306368" : (50, 100, 200)}
+
+# block info number and thickness of block bars
+BLOCK_BAR_HISTORY = 8
+BLOCK_BAR_THICKNESS = 3
 
 # default location of block hash on grid
 HASH_X = 4
@@ -167,11 +178,29 @@ def bufferPixel(x, y, r, g, b):
 def bufferDraw():
 	for x in range(32):
 		for y in range(32):
-			matrix.SetPixel(x, y, buffer[x][y][0], buffer[x][y][1], buffer[x][y][2])
+			matrix.SetPixel(x, y, *buffer[x][y])
 
 # stash cursor in the bottom right corner in case terminal won't invisiblize it
 def hideCursor():
 	stdscr.addstr(MAXYX[0]-1, MAXYX[1]-1, "")
+
+
+# color certain text depending on type of node
+def getUserAgentColor(subver):
+	userAgent = subver.lower()
+	if "classic" in userAgent:
+		color = COLOR_GOLD
+	elif "unlimited" in userAgent:
+		color = COLOR_LTBLUE
+	elif "xt" in userAgent:
+		color = COLOR_GREEN
+	elif "satoshi" not in userAgent:
+		color = COLOR_RED
+	else:
+		color = COLOR_WHITE
+	
+	return color
+
 
 # check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
@@ -191,6 +220,8 @@ def checkKeyIn():
 		party(2)
 	elif key in ("w", "W"):
 		withdraw()
+	elif key in ("h", "H"):
+		showHistory()
 	elif key in ("r", "R"):
 		res = peers.refreshPeers()
 		printMsg(res)
@@ -429,16 +460,7 @@ def drawDiff(height):
 		else:
 			# regular "full" dot -- purple?
 			bufferPixel(row, col, 100, 0, 200)
-		'''
-		if row > DIF_ROWMAX:
-			row -= 1
-		else:
-			row = DIF_ROWMIN
-			col += 1
-		# this shouldn't ever happen...
-		if col > DIF_COLMAX:
-			col = DIF_COLMIN
-		'''
+
 		if col < DIF_COLMAX:
 			col += 1
 		else:
@@ -471,16 +493,7 @@ def drawSubsidy(height):
 		else:
 			# regular "full" dot -- aqua?
 			bufferPixel(row, col, 0, 200, 100)
-		'''
-		if row > SUB_ROWMAX:
-			row -= 1
-		else:
-			row = SUB_ROWMIN
-			col += 1
-		# this shouldn't ever happen...
-		if col > SUB_COLMAX:
-			col = SUB_COLMIN
-		'''
+
 		if col < SUB_COLMAX:
 			col += 1
 		else:
@@ -587,6 +600,55 @@ def drawBlocks(recentBlocks, size):
 						bufferPixel(31 - inc - x, 31 - y, r, g, b)
 
 
+# show information about the last 8 blocks 
+def showHistory():
+	# total dots a full block fills up
+	maxDots = BLOCK_BAR_THICKNESS * 32
+
+	# number of bytes represented by each LES
+	dotValue = MAX_BLOCKSIZE/maxDots
+
+	# clear buffer
+	bufferInit()
+	
+	# sort block info data by height
+	heightHistory = sorted(fullBlockData)
+	heightHistory.reverse()
+	
+	# draw block info bars to buffer
+	for i in range(0, BLOCK_BAR_HISTORY):	
+		block = fullBlockData[heightHistory[i]]
+		blockColor = BLOCK_VERSION_COLOR[block['version']]
+		blockSize = int(block['size'])
+		
+		# start each bar with one col of space, right to left!
+		COLMIN = 31 - ((i+1) * (BLOCK_BAR_THICKNESS + 1))
+		COLMAX = COLMIN + BLOCK_BAR_THICKNESS - 1
+		row = 31
+		col = COLMIN
+
+		# number of dots to draw for this block, rounded up
+		drawDots = blockSize/dotValue + 1
+	
+		for x in range(drawDots):
+			bufferPixel(row, col, *blockColor)
+
+			if col < COLMAX:
+				col += 1
+			else:
+				col = COLMIN
+				row -= 1
+			if row < 0:
+				row = 32
+
+	# output
+	bufferDraw()
+	
+	# give us a chance to see it
+	time.sleep(QRTIME)
+
+
+
 #####################
 ### THE MAIN LOOP! ##
 #####################
@@ -636,6 +698,9 @@ while True:
 	recentBlocks = []
 	elapsed = 0
 	first = True
+	# backup before destructing
+	fullBlockData = copy.deepcopy(blockData)
+	
 	while elapsed <= timeLimit and len(blockData) > 0:
 		key = max(blockData.keys())
 		block = blockData[key]
@@ -697,18 +762,8 @@ while True:
 	line = 0
 	for peer in peerData:
 		# color each line depending on type of node
-		userAgent = peer['subver'].lower()
-		if "classic" in userAgent:
-			color = COLOR_GOLD
-		elif "unlimited" in userAgent:
-			color = COLOR_LTBLUE
-		elif "xt" in userAgent:
-			color = COLOR_GREEN
-		elif "satoshi" not in userAgent:
-			color = COLOR_RED
-		else:
-			color = COLOR_WHITE			
-
+		color = getUserAgentColor(peer['subver'])
+		
 		# some subver's have sub-SUB-vers! eg Bitcoin Unlimited
 		subsubver = peer['subver'].split('(')
 		peer['subver'] = subsubver[0]
@@ -724,12 +779,12 @@ while True:
 
 		line += 1
 
-	menu = "[D]eposit   [W]ithdraw   [B]alance   [P]arty!   [Q]uit   [R]efresh peers"
+	menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
 	
 	# our own user agent goes up top
 	uaLength = len(myUserAgent)
-	stdscr.addstr(0, MAXYX[1] - uaLength, myUserAgent)
+	stdscr.addstr(0, MAXYX[1] - uaLength, myUserAgent, curses.color_pair(getUserAgentColor(myUserAgent)))
 	
 	# if cursor is visible get it out of the way
 	hideCursor()

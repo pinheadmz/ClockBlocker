@@ -62,8 +62,10 @@ def newBlock():
 	# get info from this latest block we just learned about
 	blockInfo = rpc_connection.getblock(hash)
 	height = str(blockInfo['height'])
+	version = str(blockInfo['version'])
+	size = str(blockInfo['size'])
 	time = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
-	block = {"hash":hash, "time":time}
+	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time}
 
 	# insert into JSON from file
 	dataJson[height] = block
