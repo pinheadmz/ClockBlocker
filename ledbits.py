@@ -622,13 +622,14 @@ def showHistory():
 		blockSize = int(block['size'])
 		
 		# start each bar with one col of space, right to left!
-		COLMIN = 31 - ((i+1) * (BLOCK_BAR_THICKNESS + 1))
+		COLMIN = 32 - ((i+1) * (BLOCK_BAR_THICKNESS + 1))
 		COLMAX = COLMIN + BLOCK_BAR_THICKNESS - 1
 		row = 31
 		col = COLMIN
 
-		# number of dots to draw for this block, rounded up
+		# number of dots to draw for this block
 		drawDots = blockSize/dotValue + 1
+		drawDots = drawDots if drawDots < maxDots else maxDots
 	
 		for x in range(drawDots):
 			bufferPixel(row, col, *blockColor)
@@ -643,9 +644,14 @@ def showHistory():
 
 	# output
 	bufferDraw()
+	printMsg("Press any key to return", COLOR_RED)
 	
 	# give us a chance to see it
-	time.sleep(QRTIME)
+	#time.sleep(QRTIME)
+
+	# wait for any key to exit
+	while stdscr.getch() == -1:
+		pass
 
 
 
@@ -748,6 +754,7 @@ while True:
 	######################################
 	# PRINT ADDITIONAL OUTPUT TO CONSOLE #
 	######################################
+	# console is 94x28
 	stdscr.erase()
 	
 	stdscr.addstr(0, 0, "Block height: " + str(latestHeight))
