@@ -24,6 +24,7 @@ import ImageDraw
 import ImageFont
 import peers
 import copy
+import hashlib
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -49,9 +50,6 @@ TIMESCALE = 30
 
 # maximum size of block in block info mode (in bytes)
 MAX_BLOCKSIZE = 1000000
-
-# color of blocks in block info mode
-BLOCK_VERSION_COLOR = {"4" : (200, 100, 50), "805306368" : (50, 100, 200)}
 
 # block info number and thickness of block bars
 BLOCK_BAR_HISTORY = 8
@@ -202,6 +200,12 @@ def getUserAgentColor(subver):
 	return color
 
 
+# turn any arbitrary string into a (r, g, b) color via hash
+def stringToColor(s):
+	hash = hashlib.md5(s).hexdigest()
+	return (int(hash[0:2], 16), int(hash[2:4], 16), int(hash[4:6], 16))
+
+
 # check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
 	keyNum = stdscr.getch()
@@ -230,7 +234,8 @@ def checkKeyIn():
 
 # use curses to output a line (or two) of text towards bottom of the screen
 def printMsg(msg, color=COLOR_WHITE, line=0):
-	stdscr.addstr(MAXYX[0]-4 + line, 0, msg, curses.color_pair(color))
+	stdscr.erase()
+	stdscr.addstr(2 + line, 0, msg, curses.color_pair(color))
 	hideCursor()
 	stdscr.refresh()
 
@@ -618,7 +623,7 @@ def showHistory():
 	# draw block info bars to buffer
 	for i in range(0, BLOCK_BAR_HISTORY):	
 		block = fullBlockData[heightHistory[i]]
-		blockColor = BLOCK_VERSION_COLOR[block['version']]
+		blockColor = stringToColor('version')
 		blockSize = int(block['size'])
 		
 		# start each bar with one col of space, right to left!
@@ -628,9 +633,8 @@ def showHistory():
 		col = COLMIN
 
 		# number of dots to draw for this block
-		drawDots = blockSize/dotValue + 1
-		drawDots = drawDots if drawDots < maxDots else maxDots
-	
+		drawDots = min(blockSize/dotValue + 1, maxDots)
+		
 		for x in range(drawDots):
 			bufferPixel(row, col, *blockColor)
 
@@ -759,32 +763,32 @@ while True:
 	
 	stdscr.addstr(0, 0, "Block height: " + str(latestHeight))
 	
-	stdscr.addstr(2, 0, "Blocks until next difficulty adjustment: " + str(2016-int(latestHeight)%2016))
+	stdscr.addstr(1, 0, "Blocks until next difficulty adjustment: " + str(2016-int(latestHeight)%2016))
 	
-	stdscr.addstr(4, 0, "Blocks until next subsidy halvening: " + str(210000 - int(latestHeight)%210000))
+	stdscr.addstr(2, 0, "Blocks until next subsidy halvening: " + str(210000 - int(latestHeight)%210000))
 	
-	stdscr.addstr(6, 0, "Mempool TX's: " + str(numTx) + " -- Memory: " + str(memBytes) + " bytes")
+	stdscr.addstr(3, 0, "Mempool TX's: " + str(numTx) + " -- Memory: " + str(memBytes) + " bytes")
 	
-	stdscr.addstr(8, 0, "Connected peers:", curses.A_UNDERLINE)
-	line = 0
+	stdscr.addstr(5, 0, "Connected peers:", curses.A_UNDERLINE)
+	line = 5
 	for peer in peerData:
+		line += 1
 		# color each line depending on type of node
 		color = getUserAgentColor(peer['subver'])
 		
 		# some subver's have sub-SUB-vers! eg Bitcoin Unlimited
-		subsubver = peer['subver'].split('(')
-		peer['subver'] = subsubver[0]
+		#subsubver = peer['subver'].split('(')
+		#peer['subver'] = subsubver[0]
 
-		s =  '%-25.24s%-27.26s%-20.19s%-20.19s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
-		stdscr.addstr(8 + line + 1, 0, s, curses.color_pair(color))
+		s =  '%-23.22s%-38.37s%-18.17s%-19.18s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
+		stdscr.addstr(line, 0, s, curses.color_pair(color))
 		
 		# add subsubver on new line if present
-		if len(subsubver) > 1:
-			line += 1
-			s = '%-25.24s%-27.26s' % ('', '(' + subsubver[1])
-			stdscr.addstr(8 + line + 1, 0, s, curses.color_pair(color))
+		#if len(subsubver) > 1:
+		#	line += 1
+		#	s = '%-25.24s%-27.26s' % ('', '(' + subsubver[1])
+		#	stdscr.addstr(line, 0, s, curses.color_pair(color))
 
-		line += 1
 
 	menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
