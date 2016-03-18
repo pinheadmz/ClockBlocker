@@ -89,6 +89,8 @@ REFRESH = 1
 # number of seconds to display QR code for tip, also balance and other texts
 QRTIME = 5
 
+# flag to "mute" LED grid
+LEDGRID = True
 
 ##############
 # initialize #
@@ -203,8 +205,8 @@ def getUserAgentColor(subver):
 # turn any arbitrary string into a (r, g, b) color via hash
 def stringToColor(s):
 	hash = hashlib.md5(s).hexdigest()
-	return (int(hash[0:2], 16), int(hash[2:4], 16), int(hash[4:6], 16))
-
+	color = (int(hash[0:2], 16), int(hash[2:4], 16), int(hash[4:6], 16))
+	return color
 
 # check for keyboard input -- also serves as the pause between REFRESH cycles
 def checkKeyIn():
@@ -230,6 +232,9 @@ def checkKeyIn():
 		res = peers.refreshPeers()
 		printMsg(res)
 		time.sleep(2)
+	elif key in ("l", "L"):
+		global LEDGRID
+		LEDGRID = not LEDGRID
 
 
 # use curses to output a line (or two) of text towards bottom of the screen
@@ -623,7 +628,7 @@ def showHistory():
 	# draw block info bars to buffer
 	for i in range(0, BLOCK_BAR_HISTORY):	
 		block = fullBlockData[heightHistory[i]]
-		blockColor = stringToColor('version')
+		blockColor = stringToColor(block['version'])
 		blockSize = int(block['size'])
 		
 		# start each bar with one col of space, right to left!
@@ -737,20 +742,21 @@ while True:
 	#clear buffer
 	bufferInit()
 
-	# draw latest block hash, bottom center
-	drawHash(latestHash, HASH_X, HASH_Y)
+	if LEDGRID:
+		# draw latest block hash, bottom center
+		drawHash(latestHash, HASH_X, HASH_Y)
 	
-	# draw block icons
-	drawBlocks(recentBlocks, ICONSIZE)
+		# draw block icons
+		drawBlocks(recentBlocks, ICONSIZE)
 	
-	# draw mempool
-	drawMempool(numTx)
+		# draw mempool
+		drawMempool(numTx)
 	
-	# draw difficulty period
-	drawDiff(latestHeight)
+		# draw difficulty period
+		drawDiff(latestHeight)
 	
-	# draw subsidy period
-	drawSubsidy(latestHeight)
+		# draw subsidy period
+		drawSubsidy(latestHeight)
 	
 	# push buffer to actual LED grid
 	bufferDraw()
@@ -790,7 +796,7 @@ while True:
 		#	stdscr.addstr(line, 0, s, curses.color_pair(color))
 
 
-	menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory"
+	menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory  [L]ED Grid"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
 	
 	# our own user agent goes up top
