@@ -18,6 +18,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 #############
 
 blockFile = '/home/pi/pybits/data/block_list.txt'
+tmpFile = '/home/pi/pybits/data/tmp.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
@@ -48,16 +49,15 @@ def newBlock():
 		os.fchmod(f, 0777)
 		os.close(f)
 	
-	# open file and read data
-	f = open(blockFile,'r+')
+	# open file, read data, then close
+	f = open(blockFile,'r')
 	data = f.read()
+	f.close()
+	
 	if data:
 		dataJson = json.loads(data)
 	else:
 		dataJson = json.loads("{}")
-
-	# move file pointer back to top
-	f.seek(0)
 
 	# get info from this latest block we just learned about
 	blockInfo = rpc_connection.getblock(hash)
@@ -75,16 +75,18 @@ def newBlock():
 		key = min(dataJson.keys())
 		del dataJson[key]
 
-	# convert back to string and write to file
+	# convert back to string and write to TEMP file for atomicity 
 	dataJsonString = json.dumps(dataJson)
-	f.write(dataJsonString)
-	f.truncate()
-
-	# close file
-	f.close()
-
-	#print "New Block: " + height
-
+	tmp = open(tmpFile,'w')
+	tmp.write(dataJsonString)
+	
+	# swap in new file and close
+	tmp.flush()
+	os.fsync(tmp.fileno())
+	tmp.close()
+	os.rename(tmpFile, blockFile)
+	
+	
 
 ########
 # MAIN #

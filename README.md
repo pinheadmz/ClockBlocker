@@ -39,6 +39,7 @@ Clone this repository, then modify the "constants" lines in `block.py`, `peers.p
 #############
 
 blockFile = '/PATH-TO-DIRECTORY/data/block_list.txt'
+tmpFile = '/PATH-TO-DIRECTORY/data/tmp.txt'
 peerFile = '/PATH-TO-DIRECTORY/data/peer_list.txt'
 txFile = '/PATH-TO-DIRECTORY/data/tx.txt'
 ```

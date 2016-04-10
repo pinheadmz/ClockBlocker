@@ -685,7 +685,17 @@ while True:
 		os.system("python block.py " + str(bestHash))
 	f = open(blockFile,'r')
 	d = f.read()
-	blockData = json.loads(d)
+	try:
+		blockData = json.loads(d)
+	except ValueError:
+		eout = open("~/pybits/ERR.txt", "w")
+		eout.write(d)
+		eout.close()
+		cleanup()
+		print "VALUE ERROR"
+		print d
+		exit()
+	
 	f.close()
 	
 	# load peers info from file
