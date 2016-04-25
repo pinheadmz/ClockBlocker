@@ -81,7 +81,7 @@ SUB_COLMIN = 25
 SUB_COLMAX = 27
 
 # number of mempool transactions each LED represents
-MEMPOOLSCALE = 5
+MEMPOOLSCALE = 10
 
 # refresh rate in seconds
 REFRESH = 1
@@ -204,7 +204,7 @@ def getUserAgentColor(subver):
 
 # turn any arbitrary string into a (r, g, b) color via hash
 def stringToColor(s):
-	hash = hashlib.md5(s).hexdigest()
+	hash = hashlib.sha224(s).hexdigest()
 	color = (int(hash[0:2], 16), int(hash[2:4], 16), int(hash[4:6], 16))
 	return color
 
@@ -267,9 +267,9 @@ def showValue(value):
 
 	# break up digits and print text
 	(whole, dec) = value.split(".")
-	draw.text((0, -2 + top), whole + ".", font=font, fill=((255,100,100) if not color else color))
-	draw.text((5, 6 + top), dec[0:4], font=font, fill=((100,200,255) if not color else color))
-	draw.text((13, 14 + top), dec[4:8], font=font, fill=((200,200,55) if not color else color))
+	draw.text((0, -2 + top), whole + ".", font=font, fill=(stringToColor(value) if not color else color))
+	draw.text((5, 6 + top), dec[0:4], font=font, fill=(stringToColor(value) if not color else color))
+	draw.text((13, 14 + top), dec[4:8], font=font, fill=(stringToColor(value) if not color else color))
 	
 	# align image, push to LED grid, and wait
 	image=image.rotate(270)
@@ -796,7 +796,7 @@ while True:
 		#subsubver = peer['subver'].split('(')
 		#peer['subver'] = subsubver[0]
 
-		s =  '%-23.22s%-38.37s%-18.17s%-19.18s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
+		s =  '%-23.22s%-38.37s%-18.17s%-16.15s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 		stdscr.addstr(line, 0, s, curses.color_pair(color))
 		
 		# add subsubver on new line if present
