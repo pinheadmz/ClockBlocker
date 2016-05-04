@@ -128,11 +128,11 @@ except curses.error:
 # color pairs for curses, keeping all colors < 8 for dumb terminals
 COLOR_GOLD = 1
 curses.init_pair(COLOR_GOLD, 3, 0)
-COLOR_LTBLUE = 2
+COLOR_LTBLUE = 4
 curses.init_pair(COLOR_LTBLUE, 6, 0)
-COLOR_GREEN = 3
+COLOR_GREEN = 2
 curses.init_pair(COLOR_GREEN, 2, 0)
-COLOR_WHITE = 4
+COLOR_WHITE = 3
 curses.init_pair(COLOR_WHITE, 7, 0)
 COLOR_RED = 5
 curses.init_pair(COLOR_RED, 1, 0)
@@ -625,8 +625,11 @@ def showHistory():
 	heightHistory = sorted(fullBlockData)
 	heightHistory.reverse()
 	
-	# draw block info bars to buffer
-	for i in range(0, BLOCK_BAR_HISTORY):	
+	# draw block info bars to buffer and write to terminal screen
+	stdscr.erase()
+	m =  '%-8.6s%-8.6s%-12.10s%-64.64s' % ('Height', 'Size', 'Version', 'Hash')
+	stdscr.addstr(1, 0, m, curses.A_UNDERLINE)
+	for i in range(0, BLOCK_BAR_HISTORY):
 		block = fullBlockData[heightHistory[i]]
 		blockColor = stringToColor(block['version'])
 		blockSize = int(block['size'])
@@ -650,13 +653,20 @@ def showHistory():
 				row -= 1
 			if row < 0:
 				row = 32
-
+		
+		# print to screen
+		s =  '%-8.6s%-8.6s%-12.10s%-64.64s' % (heightHistory[i], block['size'], "0x%x" % int(block['version']), block['hash'])
+		stdscr.addstr(2+i, 0, s, curses.color_pair(  (int(block['version']) % 5)) + 1    )
+	
+	# terminal menu
+	stdscr.addstr(MAXYX[0]-1, 0, "Press any key to return", curses.color_pair(COLOR_RED))
+		
 	# output
 	bufferDraw()
-	printMsg("Press any key to return", COLOR_RED)
+	hideCursor()
+	stdscr.refresh()
+	#printMsg("Press any key to return", COLOR_RED)
 	
-	# give us a chance to see it
-	#time.sleep(QRTIME)
 
 	# wait for any key to exit
 	while stdscr.getch() == -1:
