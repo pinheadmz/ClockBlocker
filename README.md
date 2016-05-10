@@ -2,7 +2,7 @@
 
 Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 -
-### Video: https://www.youtube.com/edit?video_id=78u8EQtIXMY
+### Video: https://www.youtube.com/watch?v=78u8EQtIXMY
 ### imgur gallery: https://imgur.com/a/KYPKK
 -
 
