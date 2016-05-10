@@ -2,6 +2,10 @@
 
 Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 -
+### Video: https://www.youtube.com/edit?video_id=78u8EQtIXMY
+### imgur gallery: https://imgur.com/a/KYPKK
+-
+
 ### Dependencies:
 
 * python-bitcoinrpc: https://github.com/jgarzik/python-bitcoinrpc (modified, included in this git as bitcoinrpc.py)
