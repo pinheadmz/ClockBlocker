@@ -19,9 +19,7 @@ import socket
 import bitcoinAuth
 import sys
 import random
-import Image
-import ImageDraw
-import ImageFont
+from PIL import Image, ImageDraw, ImageFont
 import peers
 import copy
 import hashlib
@@ -36,9 +34,12 @@ from rgbmatrix import Adafruit_RGBmatrix
 #############
 
 # log of blocks and times updated by block.py
-blockFile = '/home/pi/pybits/data/block_list.txt'
-peerFile = '/home/pi/pybits/data/peer_list.txt'
-txFile = '/home/pi/pybits/data/tx.txt'
+blockFile = '/home/pi/bin/ClockBlocker/data/block_list.txt'
+peerFile = '/home/pi/bin/ClockBlocker/data/peer_list.txt'
+txFile = '/home/pi/bin/ClockBlocker/data/tx.txt'
+
+# load font
+font = ImageFont.load_path("/home/pi/bin/ClockBlocker/fonts/pilfonts/timR08.pil")
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -107,6 +108,10 @@ def cleanup():
 	print "bye!"
 atexit.register(cleanup)
 
+# make sure terminal setting is compatible with curses
+# apparently this is really bad practice, bypass
+#os.environ['TERM'] = 'xterm-256color'
+
 # init curses for text output and getch()
 stdscr = curses.initscr()
 curses.start_color()
@@ -122,30 +127,22 @@ except curses.error:
 	invisCursor = False
 
 # color pairs for curses, keeping all colors < 8 for dumb terminals
-COLOR_LTBLUE = 1
+COLOR_GOLD = 1
+curses.init_pair(COLOR_GOLD, 3, 0)
+COLOR_LTBLUE = 4
 curses.init_pair(COLOR_LTBLUE, 6, 0)
 COLOR_GREEN = 2
 curses.init_pair(COLOR_GREEN, 2, 0)
 COLOR_WHITE = 3
 curses.init_pair(COLOR_WHITE, 7, 0)
-COLOR_RED = 6
+COLOR_RED = 5
 curses.init_pair(COLOR_RED, 1, 0)
-COLOR_PURPLE = 4
-curses.init_pair(COLOR_PURPLE, 4, 0)
-COLOR_PINK = 5
-curses.init_pair(COLOR_PINK, 5, 0)
-COLOR_GOLD = 7
-curses.init_pair(COLOR_GOLD, 3, 0)
-
 
 # init the bitcoin RPC connection
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
 
 # init LED grid, rows and chain length are both required parameters:
 matrix = Adafruit_RGBmatrix(32, 1)
-
-# load font
-font = ImageFont.load_path("/home/pi/pybits/fonts/pilfonts/timR08.pil")
 
 # this matrix buffers the LED grid output to avoid using clear() every frame
 buffer = []
@@ -205,7 +202,7 @@ def getUserAgentColor(subver):
 
 # turn any arbitrary string into a (r, g, b) color via hash
 def stringToColor(s):
-	hash = hashlib.sha256(s).hexdigest()
+	hash = hashlib.sha224(s).hexdigest()
 	color = (int(hash[0:2], 16), int(hash[2:4], 16), int(hash[4:6], 16))
 	return color
 
@@ -657,7 +654,7 @@ def showHistory():
 		
 		# print to screen
 		s =  '%-7.6s%9.9s%12.10s%66.64s' % (heightHistory[i], '{:,}'.format(int(block['size'])), "0x%0*x" % (8, int(block['version'])), block['hash'])
-		stdscr.addstr(2+i, 0, s, curses.color_pair(  (int(block['version']) % 7)) + 1    )
+		stdscr.addstr(2+i, 0, s, curses.color_pair(  (int(block['version']) % 5)) + 1    )
 	
 	# terminal menu
 	stdscr.addstr(MAXYX[0]-1, 0, "Press any key to return", curses.color_pair(COLOR_RED))
