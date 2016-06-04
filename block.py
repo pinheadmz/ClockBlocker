@@ -20,7 +20,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 
 rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
-tmpFile =  rootdir + '/data/data/tmp.txt'
+tmpFile =  rootdir + '/data/tmp.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
@@ -46,6 +46,10 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 def newBlock():
 	# create new file if missing
 	if not os.path.isfile(blockFile):
+		# create directory if missing
+		if not os.path.exists(rootdir + '/data'):
+			os.makedirs(rootdir + '/data')
+
 		f = os.open(blockFile, os.O_CREAT)
 		# script will be run both as root and user
 		os.fchmod(f, 0777)

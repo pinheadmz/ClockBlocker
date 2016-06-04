@@ -47,6 +47,10 @@ def allToString(obj):
 
 # create new file if missing
 if not os.path.isfile(txFile):
+	# create directory if missing
+	if not os.path.exists(rootdir + '/data'):
+		os.makedirs(rootdir + '/data')
+
 	f = os.open(txFile, os.O_CREAT)
 	# script will be run both as root and user
 	os.fchmod(f, 0777)
