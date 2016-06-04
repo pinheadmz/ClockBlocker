@@ -632,7 +632,7 @@ def showHistory():
 	stdscr.erase()
 	m =  '%-7.6s%-9.9s%-12.10s%-66.64s' % ('Height', '  Size', '  Version', '  Hash')
 	stdscr.addstr(1, 0, m, curses.A_UNDERLINE)
-	for i in range(0, BLOCK_BAR_HISTORY):
+	for i in range(0, min(BLOCK_BAR_HISTORY, len(fullBlockData))):
 		block = fullBlockData[heightHistory[i]]
 		blockColor = stringToColor(block['version'])
 		blockSize = int(block['size'])
