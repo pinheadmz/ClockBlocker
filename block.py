@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import sys
 import os
 import peers
 import json
@@ -17,8 +18,9 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 # constants #
 #############
 
-blockFile = '/home/pi/pybits/data/block_list.txt'
-tmpFile = '/home/pi/pybits/data/tmp.txt'
+rootdir = sys.path[0]
+blockFile = rootdir + '/data/block_list.txt'
+tmpFile =  rootdir + '/data/data/tmp.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30

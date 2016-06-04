@@ -33,13 +33,14 @@ from rgbmatrix import Adafruit_RGBmatrix
 # constants #
 #############
 
-# log of blocks and times updated by block.py
-blockFile = '/home/pi/bin/ClockBlocker/data/block_list.txt'
-peerFile = '/home/pi/bin/ClockBlocker/data/peer_list.txt'
-txFile = '/home/pi/bin/ClockBlocker/data/tx.txt'
+# logs of bitcoin activity triggered by bitcoin.conf
+rootdir = sys.path[0]
+blockFile = rootdir + '/data/block_list.txt'
+peerFile =  rootdir + '/data/peer_list.txt'
+txFile =  rootdir + '/data/data/tx.txt'
 
 # load font
-font = ImageFont.load_path("/home/pi/bin/ClockBlocker/fonts/pilfonts/timR08.pil")
+font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
 
 # brightness limits for random colors
 DIM_MAX = 255

@@ -36,19 +36,17 @@ other tips for running a full node on an RPi:
 
 ### Installation:
 
-Clone this repository, then modify the "constants" lines in `block.py`, `peers.py`, `tx.py`, and `ledbits.py` so the file paths are correct:
+Clone this repository in ~/bin and make easy-to-type command to start clock:
 ```
-#############
-# constants #
-#############
-
-blockFile = '/PATH-TO-DIRECTORY/data/block_list.txt'
-tmpFile = '/PATH-TO-DIRECTORY/data/tmp.txt'
-peerFile = '/PATH-TO-DIRECTORY/data/peer_list.txt'
-txFile = '/PATH-TO-DIRECTORY/data/tx.txt'
-
-font = ImageFont.load_path("/PATH-TO-DIRECTORY/fonts/pilfonts/timR08.pil")
+$ cd ~/bin
+$ git clone https://github.com/pinheadmz/ClockBlocker.git
+$ ln -s ~/bin/ClockBlocker/ledbits.py ~/bin/ledbits
 ```
+...then from any command line you can start the clock by entering:
+````
+$ ledbits
+```
+
 
 
 ### API passwords:

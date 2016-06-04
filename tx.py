@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import sys
 import os
 import numbers
 import decimal
@@ -17,8 +18,8 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 # constants #
 #############
 
-txFile = '/home/pi/pybits/data/tx.txt'
-
+rootdir = sys.path[0]
+txFile =  rootdir + '/data/data/tx.txt'
 
 ##############
 # initialize #

@@ -4,6 +4,7 @@
 # dependencies #
 ################
 
+import sys
 import os
 import urllib2
 import json
@@ -16,8 +17,8 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 # constants #
 #############
 
-peerFile = '/home/pi/pybits/data/peer_list.txt'
-
+rootdir = sys.path[0]
+peerFile =  rootdir + '/data/peer_list.txt'
 
 ##############
 # initialize #
