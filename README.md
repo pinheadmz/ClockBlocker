@@ -14,7 +14,7 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 
 * PyQRCode: https://pypi.python.org/pypi/PyQRCode:
 ```
-$ pip install pyqrcode
+$ sudo pip install pyqrcode
 ```
 
 * Bitcoin Core (or alt-client, check out http://raspnode.com/diy.html) with the following lines added to `~/.bitcoin/bitcoin.config`:
@@ -46,6 +46,8 @@ blockFile = '/PATH-TO-DIRECTORY/data/block_list.txt'
 tmpFile = '/PATH-TO-DIRECTORY/data/tmp.txt'
 peerFile = '/PATH-TO-DIRECTORY/data/peer_list.txt'
 txFile = '/PATH-TO-DIRECTORY/data/tx.txt'
+
+font = ImageFont.load_path("/PATH-TO-DIRECTORY/fonts/pilfonts/timR08.pil")
 ```
 
 
