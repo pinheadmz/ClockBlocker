@@ -36,6 +36,11 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 def refreshPeers():
 	# create new file if missing
 	if not os.path.isfile(peerFile):
+		# create directory if missing
+		if not os.path.exists(rootdir + '/data'):
+			os.makedirs(rootdir + '/data')
+			os.fchmod(rootdir + '/data', 0777)
+		
 		p = os.open(peerFile, os.O_CREAT)
 		# script will be run both as root and user
 		os.fchmod(p, 0777)
