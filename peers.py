@@ -39,7 +39,7 @@ def refreshPeers():
 		# create directory if missing
 		if not os.path.exists(rootdir + '/data'):
 			os.makedirs(rootdir + '/data')
-			os.fchmod(rootdir + '/data', 0777)
+			os.chmod(rootdir + '/data', 0777)
 		
 		p = os.open(peerFile, os.O_CREAT)
 		# script will be run both as root and user

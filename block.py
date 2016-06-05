@@ -49,7 +49,7 @@ def newBlock():
 		# create directory if missing
 		if not os.path.exists(rootdir + '/data'):
 			os.makedirs(rootdir + '/data')
-			os.fchmod(rootdir + '/data', 0777)
+			os.chmod(rootdir + '/data', 0777)
 
 		f = os.open(blockFile, os.O_CREAT)
 		# script will be run both as root and user

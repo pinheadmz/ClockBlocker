@@ -50,7 +50,7 @@ if not os.path.isfile(txFile):
 	# create directory if missing
 	if not os.path.exists(rootdir + '/data'):
 		os.makedirs(rootdir + '/data')
-		os.fchmod(rootdir + '/data', 0777)
+		os.chmod(rootdir + '/data', 0777)
 
 	f = os.open(txFile, os.O_CREAT)
 	# script will be run both as root and user
