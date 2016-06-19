@@ -19,7 +19,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 #############
 
 rootdir = sys.path[0]
-txFile =  rootdir + '/data/data/tx.txt'
+txFile =  rootdir + '/data/tx.txt'
 
 ##############
 # initialize #
