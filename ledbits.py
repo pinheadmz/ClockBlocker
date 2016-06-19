@@ -83,7 +83,7 @@ SUB_COLMIN = 25
 SUB_COLMAX = 27
 
 # number of mempool transactions each LED represents
-MEMPOOLSCALE = 10
+MEMPOOLSCALE = 1
 
 # refresh rate in seconds
 REFRESH = 1
