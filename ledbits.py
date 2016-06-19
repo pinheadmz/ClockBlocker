@@ -37,7 +37,7 @@ from rgbmatrix import Adafruit_RGBmatrix
 rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
 peerFile =  rootdir + '/data/peer_list.txt'
-txFile =  rootdir + '/data/data/tx.txt'
+txFile =  rootdir + '/data/tx.txt'
 
 # load font
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
