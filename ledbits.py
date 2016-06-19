@@ -526,10 +526,11 @@ def drawMempool(txs):
 	num = txs/MEMPOOLSCALE
 	
 	for x in range(num):
-		# color changes each time we fill up the space and start over at the top
-		# 'red' value may exceed 255 max if layer > 2
+		# color changes each time we fill up the space
 		layer = x/maxDots
-		bufferPixel(row, col, (layer)*127, 255/(layer+1), 0)
+		layerColors = [(0,255,0), (127, 127, 0), (255, 0, 0), (127, 0, 127), (0, 0, 255), (0, 127, 127)]
+		color = layerColors[layer % len(layerColors)]
+		bufferPixel(row, col, *color)
 		
 		if col < MEM_COLMAX:
 			col += 1
