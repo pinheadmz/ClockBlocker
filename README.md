@@ -17,10 +17,10 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 $ sudo pip install pyqrcode
 ```
 
-* Bitcoin Core (or alt-client, check out http://raspnode.com/diy.html) with the following lines added to `~/.bitcoin/bitcoin.config`:
+* Bitcoin Core (or alt-client, check out http://raspnode.com/diy.html) with the following lines added to `~/.bitcoin/bitcoin.config` (see Installation below, the paths should match):
 ```
-blocknotify=python /PATH-TO-DIRECTORY/block.py %s
-walletnotify=python /PATH-TO-DIRECTORY/tx.py %s
+blocknotify=python /home/pi/bin/ClockBlocker/block.py %s
+walletnotify=python /home/pi/bin/ClockBlocker/tx.py %s
 ```
 
 other helpful `bitcoin.config` parameters for running a full node on an RPi:
