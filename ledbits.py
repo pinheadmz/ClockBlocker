@@ -94,6 +94,9 @@ QRTIME = 5
 # flag to "mute" LED grid
 LEDGRID = True
 
+# rotate grid output
+ROTATE = 180
+
 ##############
 # initialize #
 ##############
@@ -181,7 +184,16 @@ def bufferPixel(x, y, r, g, b):
 def bufferDraw():
 	for x in range(32):
 		for y in range(32):
-			matrix.SetPixel(x, y, *buffer[x][y])
+			if ROTATE == 0:
+				matrix.SetPixel(x, y, *buffer[x][y])
+			elif ROTATE == 90:
+				matrix.SetPixel(x, y, *buffer[y][31-x])
+			elif ROTATE == 180:
+				matrix.SetPixel(x, y, *buffer[31-x][31-y])
+			elif ROTATE == 270:
+				matrix.SetPixel(x, y, *buffer[31-y][x])
+			
+
 
 # stash cursor in the bottom right corner in case terminal won't invisiblize it
 def hideCursor():
@@ -275,7 +287,7 @@ def showValue(value):
 	draw.text((13, 14 + top), dec[4:8], font=font, fill=(stringToColor(value) if not color else color))
 	
 	# align image, push to LED grid, and wait
-	image=image.rotate(270)
+	image=image.rotate(270-ROTATE)
 	matrix.Clear()
 	matrix.SetImage(image.im.id, 0, 0)
 	time.sleep(QRTIME)
@@ -435,16 +447,17 @@ def showQR(addr, errcorr):
 	
 	row = 31
 	col = 0
-	matrix.Clear()
+	bufferInit()
 	for i in t:
 		if i != '\n':
-			matrix.SetPixel(row, col, 255-int(i)*255, 255-int(i)*255, 255-int(i)*255)
+			bufferPixel(row, col, 255-int(i)*255, 255-int(i)*255, 255-int(i)*255)
 			col += 1
 		else:
 			row -= 1
 			col = 0
-	
-		time.sleep(0.001)
+		
+		bufferDraw()
+		#time.sleep(0.001)
 	
 	# give us a chance to scan it
 	time.sleep(QRTIME)
