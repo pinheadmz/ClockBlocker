@@ -32,7 +32,7 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 # functions #
 #############
 
-# refresh the peers list --  TODO ONLY LOOKUP IP for new peers
+# refresh the peers list
 def refreshPeers():
 	# create new file if missing
 	if not os.path.isfile(peerFile):

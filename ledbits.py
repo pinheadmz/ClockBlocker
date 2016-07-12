@@ -94,7 +94,7 @@ QRTIME = 5
 # flag to "mute" LED grid
 LEDGRID = True
 
-# rotate grid output
+# rotate grid output: 0, 90, 180, 270
 ROTATE = 0
 
 ##############
@@ -343,6 +343,7 @@ def deposit():
 		addr = rpc_connection.getnewaddress()
 	except (socket.error, httplib.CannotSendRequest):
 		printMsg("getnewaddress http error", COLOR_RED)
+		time.sleep(2)
 		return False
 
 	# show off the new address!
@@ -425,11 +426,13 @@ def withdraw():
 		list = rpc_connection.listunspent(0)
 	except (socket.error, httplib.CannotSendRequest):
 		printMsg("listunspent http error", COLOR_RED)
+		time.sleep(2)
 		return False
 		
 	# no coins
 	if len(list) == 0:
 		printMsg("No unspent outputs!", COLOR_RED)
+		time.sleep(2)
 		return False
 
 	# calculate balances of each spendable key in wallet
@@ -460,9 +463,8 @@ def showQR(addr, errcorr):
 		else:
 			row -= 1
 			col = 0
-		
-		bufferDraw()
-		#time.sleep(0.001)
+			bufferDraw()
+			#time.sleep(0.001)
 	
 	# give us a chance to scan it
 	time.sleep(QRTIME)
@@ -706,6 +708,7 @@ while True:
 		mempoolInfo = rpc_connection.getmempoolinfo()
 	except (socket.error, httplib.CannotSendRequest):
 		printMsg("getmempoolinfo http error", COLOR_RED)
+		time.sleep(2)
 		continue	
 	numTx = mempoolInfo['size']
 	memBytes = mempoolInfo['bytes']
