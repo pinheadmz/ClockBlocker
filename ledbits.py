@@ -95,7 +95,7 @@ QRTIME = 5
 LEDGRID = True
 
 # rotate grid output
-ROTATE = 180
+ROTATE = 0
 
 ##############
 # initialize #
@@ -425,6 +425,11 @@ def withdraw():
 		list = rpc_connection.listunspent(0)
 	except (socket.error, httplib.CannotSendRequest):
 		printMsg("listunspent http error", COLOR_RED)
+		return False
+		
+	# no coins
+	if len(list) == 0
+		printMsg("No unspent outputs!", COLOR_RED)
 		return False
 
 	# calculate balances of each spendable key in wallet
