@@ -428,7 +428,7 @@ def withdraw():
 		return False
 		
 	# no coins
-	if len(list) == 0
+	if len(list) == 0:
 		printMsg("No unspent outputs!", COLOR_RED)
 		return False
 
