@@ -91,9 +91,35 @@ def newBlock():
 	tmp.flush()
 	os.fsync(tmp.fileno())
 	tmp.close()
-	os.rename(tmpFile, blockFile)
-	
-	
+	# catch 'file not found' errors in race condition against another simultaneous thread
+	try:
+		os.rename(tmpFile, blockFile)
+	except:
+		import time
+		import shutil
+		errtmp = rootdir + '/data/4_tmpAboutToWrite_' + str(int(time.time())) + '.txt'
+		errblock = rootdir + '/data/1_blockReadFirstFromDisk_' + str(int(time.time())) + '.txt'
+		errExistBlock = rootdir + '/data/2_block_fileExistingAtWriteTime_' + str(int(time.time())) + '.txt'
+		errdir = rootdir + '/data/3_ls_' + str(int(time.time())) + '.txt'
+		
+		errdirFile = open(errdir, 'w')
+		errdirFile.write(str(list(os.walk(rootdir + '/data'))))
+		errdirFile.close()
+		
+		errblockFile = open(errblock, 'w')
+		errblockFile.write(data)
+		errblockFile.close()
+		
+		errtmpFile = open(errtmp, 'w')
+		errtmpFile.write(dataJsonString)
+		errtmpFile.close()
+		
+		shutil.copyfile(blockFile, errExistBlock)
+		
+		raise
+
+
+
 
 ########
 # MAIN #
