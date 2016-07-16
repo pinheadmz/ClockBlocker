@@ -20,7 +20,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 
 rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
-tmpFile =  rootdir + '/data/tmp.txt'
+tmpFile =  rootdir + '/data/tmp' + str(int(os.urandom(4).encode('hex'), 16)) + '.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
@@ -43,7 +43,15 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 
 # get info about the new block, all we know is its hash from bitcoind
 # -- TODO: if were creating the file check the block time in the blockchain
-def newBlock():
+def newBlock():	
+	# get info from this latest block we just learned about
+	blockInfo = rpc_connection.getblock(hash)
+	height = str(blockInfo['height'])
+	version = str(blockInfo['version'])
+	size = str(blockInfo['size'])
+	time = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
+	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time}
+	
 	# create new file if missing
 	if not os.path.isfile(blockFile):
 		# create directory if missing
@@ -65,14 +73,6 @@ def newBlock():
 		dataJson = json.loads(data)
 	else:
 		dataJson = json.loads("{}")
-
-	# get info from this latest block we just learned about
-	blockInfo = rpc_connection.getblock(hash)
-	height = str(blockInfo['height'])
-	version = str(blockInfo['version'])
-	size = str(blockInfo['size'])
-	time = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
-	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time}
 
 	# insert into JSON from file
 	dataJson[height] = block
