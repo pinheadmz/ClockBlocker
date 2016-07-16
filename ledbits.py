@@ -401,11 +401,15 @@ def withdrawMenu(coins, offset = 0):
 		try:
 			checkPwd = rpc_connection.walletpassphrase(pwd, 60)
 		except JSONRPCException:
-			printMsg("Wallet passphrase error", COLOR_RED)
+			pass
+		
+		try:
+			privKey = rpc_connection.dumpprivkey(chosenAddr)
+		except JSONRPCException:
+			printMsg("Wallet or passphrase error", COLOR_RED)
 			time.sleep(2)
 			return False
 		
-		privKey = rpc_connection.dumpprivkey(chosenAddr)
 		rpc_connection.walletlock()
 
 		# show off the new address!
