@@ -410,7 +410,10 @@ def withdrawMenu(coins, offset = 0):
 			time.sleep(2)
 			return False
 		
-		rpc_connection.walletlock()
+		try:
+			rpc_connection.walletlock()
+		except:
+			pass
 
 		# show off the new address!
 		printMsg(privKey, COLOR_GREEN, 1)
