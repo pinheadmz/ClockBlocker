@@ -50,7 +50,19 @@ def newBlock():
 	version = str(blockInfo['version'])
 	size = str(blockInfo['size'])
 	time = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
-	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time}
+	# get coinbase text -- REQUIRES txindex=1 in bitcoin.conf!
+	txzero = blockInfo['tx'][0]
+	txzeroinfo = rpc_connection.getrawtransaction(txzero, 1)
+	coinbasehex = txzeroinfo['vin'][0]['coinbase']
+	coinbasestring = ""
+	for i in xrange(0, len(coinbasehex)-2, 2):
+		c = coinbasehex[i:i+2]
+		cint = int(c, 16)
+		if not 126 > cint > 32:
+			print "!!!!"
+			continue
+		coinbasestring += chr(cint)			
+	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time, "coinbase":coinbasestring}
 	
 	# create new file if missing
 	if not os.path.isfile(blockFile):
