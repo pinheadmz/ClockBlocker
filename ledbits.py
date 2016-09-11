@@ -95,7 +95,7 @@ QRTIME = 5
 LEDGRID = True
 
 # rotate grid output: 0, 90, 180, 270
-ROTATE = 0
+ROTATE = 180
 
 ##############
 # initialize #
@@ -103,6 +103,8 @@ ROTATE = 0
 
 # runs on script exit, resets terminal settings
 def cleanup():
+	time.sleep(5)
+
 	# undo curses settings
 	curses.nocbreak()
 	curses.echo()
@@ -687,8 +689,13 @@ def showHistory():
 		
 		# print to screen
 		s =  '%-7.6s%9.9s%12.10s%66.64s' % (heightHistory[i], '{:,}'.format(int(block['size'])), "0x%0*x" % (8, int(block['version'])), block['hash'])
-		stdscr.addstr(2+i, 0, s, curses.color_pair(  (int(block['version']) % 7)) + 1    )
-	
+		stdscr.addstr(2+(2*i), 0, s, curses.color_pair((int(block['version']) % 7)) + 1)
+		try:
+			t =  '%-7.6s%9.9s%14.10s%-66.64s' % ("", "", "", block['coinbase'])
+			stdscr.addstr(3+(2*i), 0, t, curses.color_pair(COLOR_WHITE))
+		except KeyError:
+			pass
+
 	# terminal menu
 	stdscr.addstr(MAXYX[0]-1, 0, "Press any key to return", curses.color_pair(COLOR_RED))
 		
