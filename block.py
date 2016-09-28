@@ -59,7 +59,6 @@ def newBlock():
 		c = coinbasehex[i:i+2]
 		cint = int(c, 16)
 		if not 126 > cint > 32:
-			print "!!!!"
 			continue
 		coinbasestring += chr(cint)			
 	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time, "coinbase":coinbasestring}
