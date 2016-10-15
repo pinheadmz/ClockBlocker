@@ -664,7 +664,10 @@ def showHistory():
 	stdscr.addstr(1, 0, m, curses.A_UNDERLINE)
 	for i in range(0, min(BLOCK_BAR_HISTORY, len(fullBlockData))):
 		block = fullBlockData[heightHistory[i]]
-		blockColor = stringToColor(block['version'])
+		if "/" in block['coinbase']:
+			blockColor = stringToColor(block['version'] + "BitcoinUnlimted")
+		else:
+			blockColor = stringToColor(block['version'])
 		blockSize = int(block['size'])
 		
 		# start each bar with one col of space, right to left!
@@ -689,7 +692,11 @@ def showHistory():
 		
 		# print to screen
 		s =  '%-7.6s%9.9s%12.10s%66.64s' % (heightHistory[i], '{:,}'.format(int(block['size'])), "0x%0*x" % (8, int(block['version'])), block['hash'])
-		stdscr.addstr(2+(2*i), 0, s, curses.color_pair((int(block['version']) % 7)) + 1)
+		if "/" in block['coinbase']:
+			stdscr.addstr(2+(2*i), 0, s, curses.color_pair((int(block['version']) * 2 % 7)) + 1)
+		else:
+			stdscr.addstr(2+(2*i), 0, s, curses.color_pair((int(block['version']) % 7)) + 1)
+		
 		try:
 			t =  '%-7.6s%9.9s%14.10s%-66.64s' % ("", "", "", block['coinbase'])
 			stdscr.addstr(3+(2*i), 0, t, curses.color_pair(COLOR_WHITE))
