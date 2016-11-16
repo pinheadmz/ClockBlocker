@@ -221,8 +221,9 @@ def getUserAgentColor(subver):
 
 # turn any arbitrary string into a (r, g, b) color via hash
 def stringToColor(s):
+	offset = 1
 	hash = hashlib.sha256(s).hexdigest()
-	color = (int(hash[0:2], 16), int(hash[2:4], 16), int(hash[4:6], 16))
+	color = (int(hash[offset:offset+2], 16), int(hash[offset+2:offset+4], 16), int(hash[offset+4:offset+6], 16))
 	return color
 
 # check for keyboard input -- also serves as the pause between REFRESH cycles
