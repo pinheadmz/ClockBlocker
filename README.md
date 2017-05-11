@@ -1,10 +1,10 @@
 # The Bitcoin Block Clock
 
 Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
--
+
 ### Video: https://www.youtube.com/watch?v=78u8EQtIXMY
 ### imgur gallery: https://imgur.com/a/KYPKK
--
+
 
 ### Dependencies:
 
@@ -16,6 +16,11 @@ Modified (see my fork: https://github.com/pinheadmz/rpi-rgb-led-matrix) already 
 * PyQRCode: https://pypi.python.org/pypi/PyQRCode:
 ```
 $ sudo pip install pyqrcode
+```
+
+* PIL (now maintained as Pillow):
+```
+$ sudo apt-get install python-pil
 ```
 
 * Bitcoin Core (or alt-client, check out http://raspnode.com/diy.html) with the following lines added to `~/.bitcoin/bitcoin.config` (see Installation below, the paths should match):
@@ -45,7 +50,7 @@ $ ln -s ~/bin/ClockBlocker/ledbits.py ~/bin/ledbits
 $ sudo chmod 577 ~/bin/ledbits
 ```
 ...then from any command line you can start the clock by entering:
-````
+```
 $ ledbits
 ```
 
