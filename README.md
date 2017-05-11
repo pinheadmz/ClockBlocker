@@ -67,8 +67,6 @@ PW = "YOUR-BITCOIN-RPC-PASSWORD"
 
 ...then create file `ipInfoAuth.py` which contains:
 ```
-api_username = 'YOUR-USERNAME'
-api_pw = 'YOUR-PASSWORD'
 api_key = 'YOUR-API-KEY'
 ```
 
