@@ -724,6 +724,8 @@ def showHistory():
 ### THE MAIN LOOP! ##
 #####################
 
+previousHeight = 0
+
 while True:		
 	# connect to node and get current mem pool size
 	try:
@@ -802,6 +804,11 @@ while True:
 		recentBlocks.append(newestBlock)
 	latestHash = recentBlocks[0]['hash']
 	latestHeight = recentBlocks[0]['index']
+	
+	# throw a party every block
+	if previousHeight != latestHeight:
+		party(2)
+	previousHeight = latestHeight
 	
 	#############################
 	# BEGIN DRAWING TO LED GRID #
