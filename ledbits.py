@@ -183,7 +183,20 @@ def bufferPixel(x, y, r, g, b):
 	buffer[x][y] = (r, g, b)
 	
 # draw entire buffer to LED grid without needing clear()
-def bufferDraw():
+def bufferDraw(fadeIn=False):
+	if fadeIn:
+                for dots in range(400):
+                        (randX, randY) = (random.randint(0,31), random.randint(0,31))
+			if ROTATE == 0:
+                                matrix.SetPixel(randX, randY, *buffer[randX][randY])
+                        elif ROTATE == 90:
+                                matrix.SetPixel(randX, randY, *buffer[randY][31-randX])
+                        elif ROTATE == 180:
+                                matrix.SetPixel(randX, randY, *buffer[31-randX][31-randY])
+                        elif ROTATE == 270:
+                                matrix.SetPixel(randX, randY, *buffer[31-randY][randX])
+			time.sleep(0.001)
+
 	for x in range(32):
 		for y in range(32):
 			if ROTATE == 0:
@@ -833,7 +846,10 @@ while True:
 		drawSubsidy(latestHeight)
 	
 	# push buffer to actual LED grid
-	bufferDraw()
+	if previousHeight != latestHeight:
+		bufferDraw(True)
+	else:
+		bufferDraw()
 
 	######################################
 	# PRINT ADDITIONAL OUTPUT TO CONSOLE #
