@@ -47,7 +47,7 @@ Clone this repository in ~/bin and make easy-to-type command to start clock:
 $ cd ~/bin
 $ git clone https://github.com/pinheadmz/ClockBlocker.git
 $ ln -s ~/bin/ClockBlocker/ledbits.py ~/bin/ledbits
-$ sudo chmod 577 ~/bin/ledbits
+$ sudo chmod 777 ~/bin/ledbits
 ```
 ...then from any command line you can start the clock by entering:
 ```

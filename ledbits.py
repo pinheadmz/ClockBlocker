@@ -50,8 +50,8 @@ DIM_LOW = 100
 # amount of time each LED row represents in seconds for block icons
 TIMESCALE = 30
 
-# maximum size of block in block info mode (in bytes)
-MAX_BLOCKSIZE = 1000000
+# maximum size of block in block history mode (in bytes)
+MAX_BLOCKSIZE = 2000000
 
 # block info number and thickness of block bars
 BLOCK_BAR_HISTORY = 8
@@ -217,6 +217,7 @@ def hideCursor():
 
 # color certain text depending on type of node
 def getUserAgentColor(subver):
+	'''
 	userAgent = subver.lower()
 	if "classic" in userAgent:
 		color = COLOR_GOLD
@@ -230,7 +231,9 @@ def getUserAgentColor(subver):
 		color = COLOR_WHITE
 	
 	return color
-
+	'''
+	hash = hashlib.sha256(subver).hexdigest()
+	return curses.color_pair((int(hash[10:20], 16) % 7) + 1)
 
 # turn any arbitrary string into a (r, g, b) color via hash
 def stringToColor(s):
@@ -662,7 +665,7 @@ def showHistory():
 	# total dots a full block fills up
 	maxDots = BLOCK_BAR_THICKNESS * 32
 
-	# number of bytes represented by each LES
+	# number of bytes represented by each LED
 	dotValue = MAX_BLOCKSIZE/maxDots
 
 	# clear buffer
@@ -678,11 +681,28 @@ def showHistory():
 	stdscr.addstr(1, 0, m, curses.A_UNDERLINE)
 	for i in range(0, min(BLOCK_BAR_HISTORY, len(fullBlockData))):
 		block = fullBlockData[heightHistory[i]]
+		extraVersion = ""
 		if "/EB" in block['coinbase'] and "/AD" in block['coinbase']:
-			blockColor = stringToColor(block['version'] + "BitcoinUnlimted")
-		else:
-			blockColor = stringToColor(block['version'])
+			extraVersion += "EmergentConsensus"
+		if "/NYA" in block['coinbase']:
+			extraVersion += "NewYorkAgreement"
+		if "/EXTBLK" in block['coinbase']:
+			extraVersion += "ExtensionBlock"
+		blockColor = stringToColor(block['version'] + extraVersion)
+		
+		# invert color for witness bytes
+		blockColorINV = tuple(255-x for x in blockColor)
+		
 		blockSize = int(block['size'])
+		strippedSize = int(block['strippedSize'])
+		# calculate witness bytes but don't include coinbase witness (for now, early adoption phase)
+		witnessBytes = blockSize - strippedSize - 36
+
+		# calculate dots needed for base and witness
+		drawWitnessDots = witnessBytes/dotValue
+		drawWitnessDots = drawWitnessDots + 1 if witnessBytes > 0 else 0
+		drawBaseDots = strippedSize/dotValue
+		drawBaseDots = drawBaseDots + 1 if (witnessBytes%dotValue + strippedSize%dotValue + 36 >= dotValue) else drawBaseDots
 		
 		# start each bar with one col of space, right to left!
 		COLMIN = 32 - ((i+1) * (BLOCK_BAR_THICKNESS + 1))
@@ -690,11 +710,27 @@ def showHistory():
 		row = 31
 		col = COLMIN
 
-		# number of dots to draw for this block
-		drawDots = min(blockSize/dotValue + 1, maxDots)
-		
-		for x in range(drawDots):
+		# draw BASE block bytes, always light at least 1 LED
+		for x in range(drawBaseDots):			
+			if col < 0 or col > 31 or row < 0 or row > 31:
+				break
+			
 			bufferPixel(row, col, *blockColor)
+			
+			if col < COLMAX:
+				col += 1
+			else:
+				col = COLMIN
+				row -= 1
+			if row < 0:
+				row = 32
+
+		# draw WITNESS block bytes, only light if witness is present beyond coinbase
+		for x in range(drawWitnessDots):
+			if col < 0 or col > 31 or row < 0 or row > 31:
+				break
+
+			bufferPixel(row, col, *blockColorINV)
 
 			if col < COLMAX:
 				col += 1
@@ -703,6 +739,7 @@ def showHistory():
 				row -= 1
 			if row < 0:
 				row = 32
+
 		
 		# print to screen
 		s =  '%-7.6s%9.9s%12.10s%66.64s' % (heightHistory[i], '{:,}'.format(int(block['size'])), "0x%0*x" % (8, int(block['version'])), block['hash'])
@@ -754,20 +791,10 @@ while True:
 	if not os.path.isfile(blockFile):
 		printMsg("No block history file, loading best block...", COLOR_RED)
 		bestHash = rpc_connection.getbestblockhash()
-		os.system("python block.py " + str(bestHash))
+		os.system("python " + rootdir + "/block.py " + str(bestHash))
 	f = open(blockFile,'r')
 	d = f.read()
-	try:
-		blockData = json.loads(d)
-	except ValueError:
-		eout = open("~/pybits/ERR.txt", "w")
-		eout.write(d)
-		eout.close()
-		cleanup()
-		print "VALUE ERROR"
-		print d
-		exit()
-	
+	blockData = json.loads(d)	
 	f.close()
 	
 	# load peers info from file
@@ -877,7 +904,7 @@ while True:
 		#peer['subver'] = subsubver[0]
 
 		s =  '%-23.22s%-38.37s%-18.17s%-16.15s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
-		stdscr.addstr(line, 0, s, curses.color_pair(color))
+		stdscr.addstr(line, 0, s, color)
 		
 		# add subsubver on new line if present
 		#if len(subsubver) > 1:
@@ -891,7 +918,7 @@ while True:
 	
 	# our own user agent goes up top
 	uaLength = len(myUserAgent)
-	stdscr.addstr(0, MAXYX[1] - uaLength, myUserAgent, curses.color_pair(getUserAgentColor(myUserAgent)))
+	stdscr.addstr(0, MAXYX[1] - uaLength, myUserAgent, getUserAgentColor(myUserAgent))
 	
 	# if cursor is visible get it out of the way
 	hideCursor()

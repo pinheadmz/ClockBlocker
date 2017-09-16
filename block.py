@@ -9,6 +9,7 @@ import os
 import peers
 import json
 import bitcoinAuth
+import time
 from sys import argv
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
@@ -20,7 +21,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 
 rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
-tmpFile =  rootdir + '/data/tmp' + str(int(os.urandom(4).encode('hex'), 16)) + '.txt'
+tmpFile =  rootdir + '/data/tmp' + '_time-' + str(int(time.time())) + '_nonce-' + str(int(os.urandom(4).encode('hex'), 16)) + '.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
@@ -49,6 +50,7 @@ def newBlock():
 	height = str(blockInfo['height'])
 	version = str(blockInfo['version'])
 	size = str(blockInfo['size'])
+	strippedSize = str(blockInfo['strippedsize'])
 	time = datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')
 	# get coinbase text -- REQUIRES txindex=1 in bitcoin.conf!
 	txzero = blockInfo['tx'][0]
@@ -61,7 +63,7 @@ def newBlock():
 		if not 126 > cint > 32:
 			continue
 		coinbasestring += chr(cint)			
-	block = {"hash":hash, "height":height, "version":version, "size":size, "time":time, "coinbase":coinbasestring}
+	block = {"hash":hash, "height":height, "version":version, "size":size, "strippedSize":strippedSize, "time":time, "coinbase":coinbasestring}
 	
 	# create new file if missing
 	if not os.path.isfile(blockFile):
@@ -102,34 +104,7 @@ def newBlock():
 	tmp.flush()
 	os.fsync(tmp.fileno())
 	tmp.close()
-	# catch 'file not found' errors in race condition against another simultaneous thread
-	try:
-		os.rename(tmpFile, blockFile)
-	except:
-		import time
-		import shutil
-		errtmp = rootdir + '/data/4_tmpAboutToWrite_' + str(int(time.time())) + '.txt'
-		errblock = rootdir + '/data/1_blockReadFirstFromDisk_' + str(int(time.time())) + '.txt'
-		errExistBlock = rootdir + '/data/2_block_fileExistingAtWriteTime_' + str(int(time.time())) + '.txt'
-		errdir = rootdir + '/data/3_ls_' + str(int(time.time())) + '.txt'
-		
-		errdirFile = open(errdir, 'w')
-		errdirFile.write(str(list(os.walk(rootdir + '/data'))))
-		errdirFile.close()
-		
-		errblockFile = open(errblock, 'w')
-		errblockFile.write(data)
-		errblockFile.close()
-		
-		errtmpFile = open(errtmp, 'w')
-		errtmpFile.write(dataJsonString)
-		errtmpFile.close()
-		
-		shutil.copyfile(blockFile, errExistBlock)
-		
-		raise
-
-
+	os.rename(tmpFile, blockFile)
 
 
 ########
