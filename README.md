@@ -10,8 +10,8 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 
 * python-bitcoinrpc: https://github.com/jgarzik/python-bitcoinrpc (modified, included in this git as bitcoinrpc.py)
 
-* Adafruit RGB LED matrix driver: https://github.com/adafruit/rpi-rgb-led-matrix/ 
-Modified (see my fork: https://github.com/pinheadmz/rpi-rgb-led-matrix) already compiled and included in this git as rgbmatrix.so
+* Henner Zeller's RGB LED matrix driver: https://github.com/hzeller/rpi-rgb-led-matrix 
+Be sure to install the Python bindings as well as the core library: https://github.com/hzeller/rpi-rgb-led-matrix/tree/master/bindings/python
 
 * PyQRCode: https://pypi.python.org/pypi/PyQRCode:
 ```

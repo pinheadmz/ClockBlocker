@@ -26,7 +26,7 @@ import hashlib
 
 from datetime import datetime
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
-from rgbmatrix import Adafruit_RGBmatrix
+from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
 
 #############
@@ -95,7 +95,7 @@ QRTIME = 5
 LEDGRID = True
 
 # rotate grid output: 0, 90, 180, 270
-ROTATE = 180
+ROTATE = 0
 
 ##############
 # initialize #
@@ -109,7 +109,7 @@ def cleanup():
 	curses.nocbreak()
 	curses.echo()
 	curses.endwin()
-	
+
 	matrix.Clear()
 	print "bye!"
 atexit.register(cleanup)
@@ -152,7 +152,12 @@ curses.init_pair(COLOR_BLUE, 4, 0)
 rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USER,bitcoinAuth.PW))
 
 # init LED grid, rows and chain length are both required parameters:
-matrix = Adafruit_RGBmatrix(32, 1)
+options = RGBMatrixOptions()
+options.rows = 32
+options.chain_length = 1
+options.parallel = 1
+options.hardware_mapping = 'adafruit-hat'  # If you have an Adafruit HAT: 'adafruit-hat'
+matrix = RGBMatrix(options = options)
 
 # this matrix buffers the LED grid output to avoid using clear() every frame
 buffer = []
@@ -207,7 +212,7 @@ def bufferDraw(fadeIn=False):
 				matrix.SetPixel(x, y, *buffer[31-x][31-y])
 			elif ROTATE == 270:
 				matrix.SetPixel(x, y, *buffer[31-y][x])
-			
+
 
 
 # stash cursor in the bottom right corner in case terminal won't invisiblize it
@@ -229,7 +234,7 @@ def getUserAgentColor(subver):
 		color = COLOR_RED
 	else:
 		color = COLOR_WHITE
-	
+
 	return color
 	'''
 	hash = hashlib.sha256(subver).hexdigest()
@@ -291,11 +296,11 @@ def showValue(value):
 	else:
 		color = False
 		top = 0
-	
+
 	# edge case if you send yourself money -- TODO, better handling? I dunno
 	value = value if value != "0E-8" else "0.00000000"
-	
-	# init image palette 
+
+	# init image palette
 	image = Image.new('RGB', (32, 32))
 	draw = ImageDraw.Draw(image)
 
@@ -304,11 +309,11 @@ def showValue(value):
 	draw.text((0, -2 + top), whole + ".", font=font, fill=(stringToColor(value) if not color else color))
 	draw.text((5, 6 + top), dec[0:4], font=font, fill=(stringToColor(value) if not color else color))
 	draw.text((13, 14 + top), dec[4:8], font=font, fill=(stringToColor(value) if not color else color))
-	
+
 	# align image, push to LED grid, and wait
 	image=image.rotate(270-ROTATE)
 	matrix.Clear()
-	matrix.SetImage(image.im.id, 0, 0)
+	matrix.SetImage(image, 0, 0)
 	time.sleep(QRTIME)
 
 
@@ -325,27 +330,27 @@ def party(loops):
 		for i in range(1000):
 			matrix.SetPixel (random.randint(0,31), random.randint(0,31),0,0,0)
 			time.sleep(.0005)
-			
-			
+
+
 # received new incoming transaction
 def newTx(txData):
 	global myTxBlocks
 
 	# don't need to show balance if just a confirmation message
-	showBalance = False	
+	showBalance = False
 	for tx in txData:
 		# only celebrate tx receive, but add confirmations to myTxBlocks
 		if tx['confirmations'] > 0:
 			myTxBlocks.append( tx['blockhash'] )
 			continue
-		
+
 		# celebrate!
 		party(4)
 		showBalance = True
 
 		# now show our received amount
 		showValue( str(tx['amount']) )
-	
+
 	# done with all transactions, show final total balance
 	if showBalance:
 		party(1)
@@ -383,7 +388,7 @@ def withdrawMenu(coins, offset = 0):
 	stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw, [P]age next, or e[X]it")
 	hideCursor()
 	stdscr.refresh()
-	
+
 	# wait a bit longer this time
 	curses.halfdelay(10 * 10)
 	choice = stdscr.getch()
@@ -402,33 +407,33 @@ def withdrawMenu(coins, offset = 0):
 		return False
 	elif choiceChar in ("p", "P"):
 		offset = offset + 10 if offset + 10 < len(coins) else 0
-		withdrawMenu(coins, offset)		
+		withdrawMenu(coins, offset)
 	elif isinstance(choiceChar, int) and int(choiceChar) <= len(menuCoins) - 1:
 		chosenAddr = menuCoins.keys()[int(choiceChar)]
 		# allow long string of input:
 		curses.nocbreak()
 
-		# get password (echo is still off!)	
+		# get password (echo is still off!)
 		stdscr.addstr(0 + i + 3, 0, "Enter wallet password...")
 		hideCursor()
 		pwd = stdscr.getstr()
-		
+
 		# reset to original value
 		curses.halfdelay(REFRESH * 10)
-		
+
 		# get that key from bitcoin
 		try:
 			checkPwd = rpc_connection.walletpassphrase(pwd, 60)
 		except JSONRPCException:
 			pass
-		
+
 		try:
 			privKey = rpc_connection.dumpprivkey(chosenAddr)
 		except JSONRPCException:
 			printMsg("Wallet or passphrase error", COLOR_RED)
 			time.sleep(2)
 			return False
-		
+
 		try:
 			rpc_connection.walletlock()
 		except:
@@ -454,7 +459,7 @@ def withdraw():
 		printMsg("listunspent http error", COLOR_RED)
 		time.sleep(2)
 		return False
-		
+
 	# no coins
 	if len(list) == 0:
 		printMsg("No unspent outputs!", COLOR_RED)
@@ -468,7 +473,7 @@ def withdraw():
 			coins[addr['address']] += addr['amount']
 		else:
 			coins[addr['address']] = addr['amount']
-	
+
 	# send unspent coins list to the recursive paging menu function
 	withdrawMenu(coins)
 
@@ -478,7 +483,7 @@ def showQR(addr, errcorr):
 	# generate QR code and display on LED grid
 	code = pyqrcode.create(addr, error=errcorr, version=3)
 	t = code.text(1)
-	
+
 	row = 31
 	col = 0
 	bufferInit()
@@ -491,7 +496,7 @@ def showQR(addr, errcorr):
 			col = 0
 			bufferDraw()
 			#time.sleep(0.001)
-	
+
 	# give us a chance to scan it
 	time.sleep(QRTIME)
 
@@ -508,10 +513,10 @@ def drawDiff(height):
 
 	# therefore number of dots to draw are...
 	drawDots = since/dotValue
-	
+
 	# last dot is a fraction
 	lastDot = float(since%dotValue) / dotValue
-	
+
 	for x in range(drawDots + 1):
 		if x == drawDots:
 			# last dot will indicate fraction of the regular color
@@ -541,10 +546,10 @@ def drawSubsidy(height):
 
 	# therefore number of dots to draw are...
 	drawDots = since/dotValue
-	
+
 	# last dot is a fraction
 	lastDot = float(since%dotValue) / dotValue
-	
+
 	for x in range(drawDots + 1):
 		if x == drawDots:
 			# last dot will indicate fraction of the regular color
@@ -568,16 +573,16 @@ def drawMempool(txs):
 	col = MEM_COLMIN
 	maxDots = (MEM_ROWMIN - MEM_ROWMAX + 1) * (MEM_COLMAX - MEM_COLMIN + 1)
 
-	# scale down mempool size for viewing	
+	# scale down mempool size for viewin
 	num = txs/MEMPOOLSCALE
-	
+
 	for x in range(num):
 		# color changes each time we fill up the space
 		layer = x/maxDots
 		layerColors = [(0,255,0), (127, 127, 0), (255, 0, 0), (127, 0, 127), (0, 0, 255), (0, 127, 127)]
 		color = layerColors[layer % len(layerColors)]
 		bufferPixel(row, col, *color)
-		
+
 		if col < MEM_COLMAX:
 			col += 1
 		else:
@@ -602,11 +607,11 @@ def drawHash(hash, x, y):
 	b0 = int(hash[-12:-10], 16) % DIM_MED
 
 	# iterate through hash string and set pixels
-	for row in range(0,16):  
+	for row in range(0,16):
         	index = row * 4
         	chunk = hash[index:index+4]
         	chunkBinary = bin(int(chunk, 16))[2:].zfill(16)
-		for col, bit in enumerate(chunkBinary):		
+		for col, bit in enumerate(chunkBinary):
 			if bit == "1":
 				bufferPixel(y - row, x + col, r1, g1, b1)
 			else:
@@ -617,7 +622,7 @@ def drawHash(hash, x, y):
 def drawBlocks(recentBlocks, size):
 	# size of icons must be at least 1x1 pixels
 	size = size if size > 1 else 1
-	
+
 	for num, block in enumerate(recentBlocks):
 		hash = block['hash']
 		time = block['time']
@@ -625,12 +630,12 @@ def drawBlocks(recentBlocks, size):
 			myTx = True
 		else:
 			myTx = False
-		
+
 		# choose color from block hash least sig bits and boost overall brightness
 		r = (int(hash[-2:], 16)%200) + 55
 		g = (int(hash[-4:-2], 16)%200) + 55
 		b = (int(hash[-6:-4], 16)%200) + 55
-		
+
 		# figure out where this block goes around the edge of grid
 		t = time / TIMESCALE
 		section = t / (33 - size)
@@ -660,7 +665,7 @@ def drawBlocks(recentBlocks, size):
 						bufferPixel(31 - inc - x, 31 - y, r, g, b)
 
 
-# show information about the last 8 blocks 
+# show information about the last 8 blocks
 def showHistory():
 	# total dots a full block fills up
 	maxDots = BLOCK_BAR_THICKNESS * 32
@@ -670,11 +675,11 @@ def showHistory():
 
 	# clear buffer
 	bufferInit()
-	
+
 	# sort block info data by height
 	heightHistory = sorted(fullBlockData)
 	heightHistory.reverse()
-	
+
 	# draw block info bars to buffer and write to terminal screen
 	stdscr.erase()
 	m =  '%-7.6s%-9.9s%-12.10s%-66.64s' % ('Height', '  Size', '  Version', '  Hash')
@@ -689,10 +694,10 @@ def showHistory():
 		if "/EXTBLK" in block['coinbase']:
 			extraVersion += "ExtensionBlock"
 		blockColor = stringToColor(block['version'] + extraVersion)
-		
+
 		# invert color for witness bytes
 		blockColorINV = tuple(255-x for x in blockColor)
-		
+
 		blockSize = int(block['size'])
 		strippedSize = int(block['strippedSize'])
 		# calculate witness bytes but don't include coinbase witness (for now, early adoption phase)
@@ -703,7 +708,7 @@ def showHistory():
 		drawWitnessDots = drawWitnessDots + 1 if witnessBytes > 0 else 0
 		drawBaseDots = strippedSize/dotValue
 		drawBaseDots = drawBaseDots + 1 if (witnessBytes%dotValue + strippedSize%dotValue + 36 >= dotValue) else drawBaseDots
-		
+
 		# start each bar with one col of space, right to left!
 		COLMIN = 32 - ((i+1) * (BLOCK_BAR_THICKNESS + 1))
 		COLMAX = COLMIN + BLOCK_BAR_THICKNESS - 1
@@ -711,12 +716,12 @@ def showHistory():
 		col = COLMIN
 
 		# draw BASE block bytes, always light at least 1 LED
-		for x in range(drawBaseDots):			
+		for x in range(drawBaseDots):
 			if col < 0 or col > 31 or row < 0 or row > 31:
 				break
-			
+
 			bufferPixel(row, col, *blockColor)
-			
+
 			if col < COLMAX:
 				col += 1
 			else:
@@ -740,14 +745,14 @@ def showHistory():
 			if row < 0:
 				row = 32
 
-		
+
 		# print to screen
 		s =  '%-7.6s%9.9s%12.10s%66.64s' % (heightHistory[i], '{:,}'.format(int(block['size'])), "0x%0*x" % (8, int(block['version'])), block['hash'])
 		if "/EB" in block['coinbase'] and "/AD" in block['coinbase']:
 			stdscr.addstr(2+(2*i), 0, s, curses.color_pair((int(block['version']) * 2 % 7)) + 1)
 		else:
 			stdscr.addstr(2+(2*i), 0, s, curses.color_pair((int(block['version']) % 7)) + 1)
-		
+
 		try:
 			t =  '%-7.6s%9.9s%14.10s%-66.64s' % ("", "", "", block['coinbase'])
 			stdscr.addstr(3+(2*i), 0, t, curses.color_pair(COLOR_WHITE))
@@ -756,13 +761,13 @@ def showHistory():
 
 	# terminal menu
 	stdscr.addstr(MAXYX[0]-1, 0, "Press any key to return", curses.color_pair(COLOR_RED))
-		
+
 	# output
 	bufferDraw()
 	hideCursor()
 	stdscr.refresh()
 	#printMsg("Press any key to return", COLOR_RED)
-	
+
 
 	# wait for any key to exit
 	while stdscr.getch() == -1:
@@ -776,17 +781,17 @@ def showHistory():
 
 previousHeight = 0
 
-while True:		
+while True:
 	# connect to node and get current mem pool size
 	try:
 		mempoolInfo = rpc_connection.getmempoolinfo()
 	except (socket.error, httplib.CannotSendRequest):
 		printMsg("getmempoolinfo http error", COLOR_RED)
 		time.sleep(2)
-		continue	
+		continue
 	numTx = mempoolInfo['size']
 	memBytes = mempoolInfo['bytes']
-	
+
 	# load recent block info from file created by blocks.py
 	if not os.path.isfile(blockFile):
 		printMsg("No block history file, loading best block...", COLOR_RED)
@@ -794,9 +799,9 @@ while True:
 		os.system("python " + rootdir + "/block.py " + str(bestHash))
 	f = open(blockFile,'r')
 	d = f.read()
-	blockData = json.loads(d)	
+	blockData = json.loads(d)
 	f.close()
-	
+
 	# load peers info from file
 	if not os.path.isfile(peerFile):
 		peers.refreshPeers()
@@ -804,7 +809,7 @@ while True:
 	pd = p.read()
 	peerData = json.loads(pd)
 	p.close()
-	
+
 	# check for a new Tx file, load, then delete it
 	if os.path.isfile(txFile):
 		t = open(txFile,'r')
@@ -815,7 +820,7 @@ while True:
 			txData = json.loads(td)
 			if txData:
 				newTx(txData)
-	
+
 	# load info about as many recent blocks as can fit on grid given TIMESCALE and ICONSIZE
 	now = datetime.utcnow()
 	timeLimit = TIMESCALE * (33 - ICONSIZE) * 3
@@ -824,7 +829,7 @@ while True:
 	first = True
 	# backup before destructing
 	fullBlockData = copy.deepcopy(blockData)
-	
+
 	while elapsed <= timeLimit and len(blockData) > 0:
 		key = max(blockData.keys())
 		block = blockData[key]
@@ -844,7 +849,7 @@ while True:
 		recentBlocks.append(newestBlock)
 	latestHash = recentBlocks[0]['hash']
 	latestHeight = recentBlocks[0]['index']
-	
+
 	# throw a party every block
 	if previousHeight != latestHeight:
 		party(2)
@@ -852,7 +857,7 @@ while True:
 	else:
 		fadeIn=False
 	previousHeight = latestHeight
-	
+
 	#############################
 	# BEGIN DRAWING TO LED GRID #
 	#############################
@@ -862,19 +867,19 @@ while True:
 	if LEDGRID:
 		# draw latest block hash, bottom center
 		drawHash(latestHash, HASH_X, HASH_Y)
-	
+
 		# draw block icons
 		drawBlocks(recentBlocks, ICONSIZE)
-	
+
 		# draw mempool
 		drawMempool(numTx)
-	
+
 		# draw difficulty period
 		drawDiff(latestHeight)
-	
+
 		# draw subsidy period
 		drawSubsidy(latestHeight)
-	
+
 	# push buffer to actual LED grid
 	bufferDraw(fadeIn)
 
@@ -883,29 +888,29 @@ while True:
 	######################################
 	# console is 94x28
 	stdscr.erase()
-	
+
 	stdscr.addstr(0, 0, "Block height: " + str(latestHeight))
-	
+
 	stdscr.addstr(1, 0, "Blocks until next difficulty adjustment: " + str(2016-int(latestHeight)%2016))
-	
+
 	stdscr.addstr(2, 0, "Blocks until next subsidy halvening: " + str(210000 - int(latestHeight)%210000))
-	
+
 	stdscr.addstr(3, 0, "Mempool TX's: " + str(numTx) + " -- Memory: " + str(memBytes) + " bytes")
-	
+
 	stdscr.addstr(5, 0, "Connected peers:", curses.A_UNDERLINE)
 	line = 5
 	for peer in peerData:
 		line += 1
 		# color each line depending on type of node
 		color = getUserAgentColor(peer['subver'])
-		
+
 		# some subver's have sub-SUB-vers! eg Bitcoin Unlimited
 		#subsubver = peer['subver'].split('(')
 		#peer['subver'] = subsubver[0]
 
 		s =  '%-23.22s%-38.37s%-18.17s%-16.15s' % (peer['addr'], peer['subver'], peer['country'], peer['city'])
 		stdscr.addstr(line, 0, s, color)
-		
+
 		# add subsubver on new line if present
 		#if len(subsubver) > 1:
 		#	line += 1
@@ -915,16 +920,16 @@ while True:
 
 	menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory  [L]ED Grid"
 	stdscr.addstr(MAXYX[0]-1, 0, menu)
-	
+
 	# our own user agent goes up top
 	uaLength = len(myUserAgent)
 	stdscr.addstr(0, MAXYX[1] - uaLength, myUserAgent, getUserAgentColor(myUserAgent))
-	
+
 	# if cursor is visible get it out of the way
 	hideCursor()
 
 	# push text buffer to terminal display
 	stdscr.refresh()
-	
+
 	# check for keyboard input and pause before display refresh
 	checkKeyIn()

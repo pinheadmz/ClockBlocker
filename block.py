@@ -103,9 +103,9 @@ def newBlock():
 	# swap in new file and close
 	tmp.flush()
 	os.fsync(tmp.fileno())
+	os.fchmod(tmp.fileno(), 0777)
 	tmp.close()
 	os.rename(tmpFile, blockFile)
-
 
 ########
 # MAIN #
