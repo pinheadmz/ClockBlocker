@@ -11,6 +11,7 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 * python-bitcoinrpc: https://github.com/jgarzik/python-bitcoinrpc (modified, included in this git as bitcoinrpc.py)
 
 * Henner Zeller's RGB LED matrix driver: https://github.com/hzeller/rpi-rgb-led-matrix 
+
 Be sure to install the Python bindings as well as the core library: https://github.com/hzeller/rpi-rgb-led-matrix/tree/master/bindings/python
 
 * PyQRCode: https://pypi.python.org/pypi/PyQRCode:
@@ -43,11 +44,11 @@ other tips for running a full node on an RPi:
 ### Installation:
 
 Clone this repository in ~/bin and make easy-to-type command to start clock:
-```
-$ cd ~/bin
+  ```
+$ cd ~
 $ git clone https://github.com/pinheadmz/ClockBlocker.git
-$ ln -s ~/bin/ClockBlocker/ledbits.py ~/bin/ledbits
-$ sudo chmod 777 ~/bin/ledbits
+$ sudo ln -s ~/ClockBlocker/ledbits.py /usr/local/bin/ledbits
+$ sudo chmod 777 /usr/local/bin/ledbits
 ```
 ...then from any command line you can start the clock by entering:
 ```
