@@ -14,6 +14,8 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 
 Be sure to install the Python bindings as well as the core library: https://github.com/hzeller/rpi-rgb-led-matrix/tree/master/bindings/python
 
+You may also need to solder a jumper on the Adafruit HAT: https://github.com/hzeller/rpi-rgb-led-matrix#improving-flicker
+
 * PyQRCode: https://pypi.python.org/pypi/PyQRCode:
 ```
 $ sudo pip install pyqrcode

@@ -42,6 +42,9 @@ txFile =  rootdir + '/data/tx.txt'
 # load font
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
 
+# % brightness for entire display
+BRIGHTNESS = 50
+
 # brightness limits for random colors
 DIM_MAX = 255
 DIM_MED = 128
@@ -95,7 +98,7 @@ QRTIME = 5
 LEDGRID = True
 
 # rotate grid output: 0, 90, 180, 270
-ROTATE = 0
+ROTATE = 90
 
 ##############
 # initialize #
@@ -156,7 +159,12 @@ options = RGBMatrixOptions()
 options.rows = 32
 options.chain_length = 1
 options.parallel = 1
-options.hardware_mapping = 'adafruit-hat'  # If you have an Adafruit HAT: 'adafruit-hat'
+options.brightness=BRIGHTNESS
+options.scan_mode=1
+options.gpio_slowdown=2
+options.pwm_lsb_nanoseconds=130
+options.show_refresh_rate=0
+options.hardware_mapping = 'adafruit-hat-pwm'  # If you have an Adafruit HAT: 'adafruit-hat'
 matrix = RGBMatrix(options = options)
 
 # this matrix buffers the LED grid output to avoid using clear() every frame
@@ -186,7 +194,7 @@ def bufferInit():
 def bufferPixel(x, y, r, g, b):
 	global buffer
 	buffer[x][y] = (r, g, b)
-	
+
 # draw entire buffer to LED grid without needing clear()
 def bufferDraw(fadeIn=False):
 	if fadeIn:
