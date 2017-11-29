@@ -859,7 +859,7 @@ while True:
 	latestHeight = recentBlocks[0]['index']
 
 	# throw a party every block
-	if previousHeight != latestHeight:
+	if previousHeight != latestHeight and LEDGRID:
 		party(2)
 		fadeIn=True
 	else:
