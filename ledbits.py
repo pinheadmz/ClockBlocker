@@ -98,7 +98,7 @@ QRTIME = 5
 LEDGRID = True
 
 # rotate grid output: 0, 90, 180, 270
-ROTATE = 90
+ROTATE = 0
 
 ##############
 # initialize #
@@ -523,15 +523,14 @@ def drawDiff(height):
 	drawDots = since/dotValue
 
 	# last dot is a fraction
-	lastDot = float(since%dotValue) / dotValue
+	#lastDot = float(since%dotValue) / dotValue
+	
+	# overall percentage colors entire bar
+	progress = float(since) / 2016
+	color = (int(progress * 100), 255-int(progress*255), int(progress * 200))
 
 	for x in range(drawDots + 1):
-		if x == drawDots:
-			# last dot will indicate fraction of the regular color
-			bufferPixel(row, col, int(lastDot * 100), 255-int(lastDot*255), int(lastDot * 200))
-		else:
-			# regular "full" dot -- purple?
-			bufferPixel(row, col, 100, 0, 200)
+		bufferPixel(row, col, *color)
 
 		if col < DIF_COLMAX:
 			col += 1
@@ -556,15 +555,14 @@ def drawSubsidy(height):
 	drawDots = since/dotValue
 
 	# last dot is a fraction
-	lastDot = float(since%dotValue) / dotValue
+	#lastDot = float(since%dotValue) / dotValue
+	
+	# overall percentage colors entire bar
+	progress = float(since) / 210000
+	color = (255 - int(progress * 255), int(progress * 200), int(progress * 100))
 
 	for x in range(drawDots + 1):
-		if x == drawDots:
-			# last dot will indicate fraction of the regular color
-			bufferPixel(row, col, 255 - int(lastDot * 255), int(lastDot * 200), int(lastDot * 100))
-		else:
-			# regular "full" dot -- aqua?
-			bufferPixel(row, col, 0, 200, 100)
+		bufferPixel(row, col, *color)
 
 		if col < SUB_COLMAX:
 			col += 1
