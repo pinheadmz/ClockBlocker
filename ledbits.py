@@ -39,6 +39,9 @@ blockFile = rootdir + '/data/block_list.txt'
 peerFile =  rootdir + '/data/peer_list.txt'
 txFile =  rootdir + '/data/tx.txt'
 
+# speical :-)
+sslogo = Image.open(rootdir + '/imgs/sslogo.bmp')
+
 # load font
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
 
@@ -282,7 +285,8 @@ def checkKeyIn():
 	elif key in ("l", "L"):
 		global LEDGRID
 		LEDGRID = not LEDGRID
-
+	elif key in ("s", "S"):
+		showLogo()
 
 # use curses to output a line (or two) of text towards bottom of the screen
 def printMsg(msg, color=COLOR_WHITE, line=0):
@@ -508,6 +512,12 @@ def showQR(addr, errcorr):
 	# give us a chance to scan it
 	time.sleep(QRTIME)
 
+# special :-)
+def showLogo():
+	matrix.Clear()
+	matrix.SetImage(sslogo.rotate(270 - ROTATE))
+	printMsg("\n\n\n\n\n\n\n\n\n\n\t\t\tat light speed, we're only 15 milliseconds apart", COLOR_GOLD)
+	time.sleep(QRTIME)
 
 # draw blocks since last difficulty adjustment
 def drawDiff(height):
