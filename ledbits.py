@@ -43,7 +43,7 @@ txFile =  rootdir + '/data/tx.txt'
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
 
 # % brightness for entire display
-BRIGHTNESS = 50
+BRIGHTNESS = 40
 
 # brightness limits for random colors
 DIM_MAX = 255
