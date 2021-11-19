@@ -276,6 +276,7 @@ def checkKeyIn():
 	elif key in ("h", "H"):
 		showHistory()
 	elif key in ("r", "R"):
+		printMsg("Refreshing peers...")
 		res = peers.refreshPeers()
 		printMsg(res)
 		time.sleep(2)
@@ -810,6 +811,7 @@ while True:
 
 	# load peers info from file
 	if not os.path.isfile(peerFile):
+		printMsg("Collecting peer data...")
 		peers.refreshPeers()
 	p = open(peerFile,'r')
 	pd = p.read()

@@ -10,6 +10,7 @@ import urllib2
 import json
 import bitcoinAuth
 import ipInfoAuth
+import time
 from bitcoinrpc import AuthServiceProxy, JSONRPCException
 
 
@@ -62,7 +63,16 @@ def refreshPeers():
 	newPeerInfo = rpc_connection.getpeerinfo()
 	newPeers = 0
 	totalPeers = 0
-	
+
+	headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
+      'AppleWebKit/537.11 (KHTML, like Gecko) '
+      'Chrome/23.0.1271.64 Safari/537.11',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+      'Accept-Encoding': 'none',
+      'Accept-Language': 'en-US,en;q=0.8',
+      'Connection': 'keep-alive'}
+
 	# request location from IP info server and fill out info for display
 	for peer in newPeerInfo:
 		totalPeers += 1
@@ -82,22 +92,25 @@ def refreshPeers():
 		thisIP = thisPeer['addr'].split(':')[0]
 		
 		try:
-			response = urllib2.urlopen('http://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP)
-		except urllib2.URLError:
-			#print "Get IP Info error"
+			response = urllib2.urlopen(urllib2.Request('https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP, headers=headers))
+		except Exception as e:
+			# print e
 			response = False	
 		
 		if response:
+			# print response
 			responseJson = json.load(response)	
+			newPeers += 1
 		else:
+			# print "no response"
 			responseJson = False
 		
 		thisPeer['country'] = responseJson['countryName'] if response else ''
 		thisPeer['region'] = responseJson['regionName'] if response else ''
 		thisPeer['city'] = responseJson['cityName'] if response else ''
 		
-		newPeers += 1
 		updatedPeers.append(thisPeer)
+		time.sleep(0.5)
 	
 	# write json of peer info and close
 	peerJson = json.dumps(updatedPeers)	
@@ -105,3 +118,8 @@ def refreshPeers():
 	p.truncate()
 	p.close()
 	return "Peers list refreshed: " + str(newPeers) + " updated, " + str(totalPeers) + " total"
+
+if __name__ == "__main__":
+	print "refreshing..."
+	res = refreshPeers()
+	print res
