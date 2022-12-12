@@ -73,3 +73,6 @@ to build The Bitcoin Block Clock is listed
 [on this spreadsheet](https://docs.google.com/spreadsheets/d/e/2PACX-1vQoqwZii8Q7Vff4G6VBbHY9nEBDpCbcJl7A2JQr04GaWl1P8F48w6u9bmrUHPezkEt8M4pJDIwM2e7H/pubhtml?gid=0&single=true). I always try to buy parts from adafruit.com or purse.io
 so I can spend Bitcoin!
 
+### Owner's manual
+
+[Usage instructions](https://docs.google.com/document/d/e/2PACX-1vRi7wA3FIfBUQlZgS-69wufT3hh3Ql9BB_YaUYyeJwtmLlDsRau02cQcQiyQ-pIc6Z-0PLSzBtu4j9x/pub) are printed out and shipper to buyers with their order.
