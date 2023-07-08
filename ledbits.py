@@ -37,9 +37,12 @@ rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
 peerFile =  rootdir + '/data/peer_list.txt'
 txFile =  rootdir + '/data/tx.txt'
+lnFile =  rootdir + '/data/ln.txt'
 
 # speical :-)
 sslogo = Image.open(rootdir + '/imgs/sslogo.bmp')
+lnlogo = Image.open(rootdir + '/imgs/ln.bmp')
+lnlogo = lnlogo.convert('RGB')
 
 # load font
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
@@ -370,6 +373,17 @@ def newTx(txData):
     party(1)
 
 
+# received new LN transaction
+def newLn(lnData):
+	sats = lnData['amt_paid_sat']
+	btc = int(sats) / 1e8
+	val = '{:.8f}'.format(btc)
+	showLN()
+	party(1)
+	showValue(val)
+	party(1)
+
+
 # get an address to deposit money in
 def deposit():
   printMsg("Loading bitcoin address...")
@@ -518,6 +532,11 @@ def showLogo():
 	matrix.SetImage(sslogo.rotate(270 - ROTATE))
 	printMsg("\n\n\n\n\n\n\n\n\n\n\t\t\tat light speed, we're only 15 milliseconds apart", COLOR_GOLD)
 	time.sleep(QRTIME)
+
+def showLN():
+	matrix.Clear()
+	matrix.SetImage(lnlogo.rotate(270 - ROTATE))
+	time.sleep(QRTIME / 2)
 
 # draw blocks since last difficulty adjustment
 def drawDiff(height):
@@ -837,6 +856,17 @@ while True:
       txData = json.loads(td)
       if txData:
         newTx(txData)
+
+  # check for a new LN payment file, load, then delete it
+  if os.path.isfile(lnFile):
+    t = open(lnFile,'r')
+    td = t.read()
+    t.close()
+    os.remove(lnFile)
+    if td:
+      lnData = json.loads(td)
+      if lnData:
+        newLn(lnData)
 
   # load info about as many recent blocks as can fit on grid given TIMESCALE and ICONSIZE
   now = datetime.utcnow()
