@@ -431,7 +431,7 @@ def withdrawMenu(coins, offset = 0):
 
     # get that key from bitcoin
     try:
-      checkPwd = rpc_connection.walletpassphrase(pwd, 60)
+      rpc_connection.walletpassphrase(pwd, 60)
     except JSONRPCException:
       pass
 
@@ -517,14 +517,14 @@ def drawDiff(height):
   maxDots = (DIF_ROWMIN - DIF_ROWMAX + 1) * (DIF_COLMAX - DIF_COLMIN + 1)
 
   # number of blocks represented by each LED
-  dotValue = 2016/maxDots
+  dotValue = 2016//maxDots
 
   # therefore number of dots to draw are...
-  drawDots = since/dotValue
+  drawDots = since//dotValue
 
   # last dot is a fraction
   #lastDot = float(since%dotValue) / dotValue
-  
+
   # overall percentage colors entire bar
   progress = float(since) / 2016
   color = (int(progress * 100), 255-int(progress*255), int(progress * 200))
@@ -549,14 +549,14 @@ def drawSubsidy(height):
   maxDots = (SUB_ROWMIN - SUB_ROWMAX + 1) * (SUB_COLMAX - SUB_COLMIN + 1)
 
   # number of blocks represented by each LED
-  dotValue = 210000/maxDots
+  dotValue = 210000//maxDots
 
   # therefore number of dots to draw are...
-  drawDots = since/dotValue
+  drawDots = since//dotValue
 
   # last dot is a fraction
   #lastDot = float(since%dotValue) / dotValue
-  
+
   # overall percentage colors entire bar
   progress = float(since) / 210000
   color = (255 - int(progress * 255), int(progress * 200), int(progress * 100))
@@ -584,7 +584,7 @@ def drawMempool(txs):
 
   for x in range(num):
     # color changes each time we fill up the space
-    layer = x/maxDots
+    layer = x//maxDots
     layerColors = [(0,255,0), (127, 127, 0), (255, 0, 0), (127, 0, 127), (0, 0, 255), (0, 127, 127)]
     color = layerColors[layer % len(layerColors)]
     bufferPixel(row, col, *color)
@@ -643,8 +643,8 @@ def drawBlocks(recentBlocks, size):
     b = (int(hash[-6:-4], 16)%200) + 55
 
     # figure out where this block goes around the edge of grid
-    t = time / TIMESCALE
-    section = t / (33 - size)
+    t = time // TIMESCALE
+    section = t // (33 - size)
     inc = t % (33 - size)
 
     # draw icon, default empty square, filled in for confirmed Tx
@@ -677,7 +677,7 @@ def showHistory():
   maxDots = BLOCK_BAR_THICKNESS * 32
 
   # number of bytes represented by each LED
-  dotValue = MAX_BLOCKSIZE/maxDots
+  dotValue = MAX_BLOCKSIZE//maxDots
 
   # clear buffer
   bufferInit()
@@ -710,9 +710,9 @@ def showHistory():
     witnessBytes = blockSize - strippedSize - 36
 
     # calculate dots needed for base and witness
-    drawWitnessDots = witnessBytes/dotValue
+    drawWitnessDots = witnessBytes//dotValue
     drawWitnessDots = drawWitnessDots + 1 if witnessBytes > 0 else 0
-    drawBaseDots = strippedSize/dotValue
+    drawBaseDots = strippedSize//dotValue
     drawBaseDots = drawBaseDots + 1 if (witnessBytes%dotValue + strippedSize%dotValue + 36 >= dotValue) else drawBaseDots
 
     # start each bar with one col of space, right to left!
@@ -782,7 +782,7 @@ def showHistory():
 
 
 #####################
-### THE MAIN LOOP! ##
+#   THE MAIN LOOP!  #
 #####################
 
 previousHeight = 0
