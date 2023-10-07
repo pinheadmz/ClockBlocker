@@ -38,7 +38,7 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 
 # because JSON dump hates decimals for soem reason
 def allToString(obj):
-	return str(obj)
+  return str(obj)
 
 
 ########
@@ -47,23 +47,23 @@ def allToString(obj):
 
 # create new file if missing
 if not os.path.isfile(txFile):
-	# create directory if missing
-	if not os.path.exists(rootdir + '/data'):
-		os.makedirs(rootdir + '/data')
-		os.chmod(rootdir + '/data', 0777)
+  # create directory if missing
+  if not os.path.exists(rootdir + '/data'):
+    os.makedirs(rootdir + '/data')
+    os.chmod(rootdir + '/data', 0777)
 
-	f = os.open(txFile, os.O_CREAT)
-	# script will be run both as root and user
-	os.fchmod(f, 0777)
-	os.close(f)
+  f = os.open(txFile, os.O_CREAT)
+  # script will be run both as root and user
+  os.fchmod(f, 0777)
+  os.close(f)
 
 # open file and read data
 f = open(txFile,'r+')
 data = f.read()
 if data:
-	dataJson = json.loads(data)
+  dataJson = json.loads(data)
 else:
-	dataJson = json.loads("[]")
+  dataJson = json.loads("[]")
 
 # move file pointer back to top
 f.seek(0)
