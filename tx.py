@@ -84,5 +84,5 @@ f.truncate()
 f.close()
 
 #print
-#print "--"
-#print "New Tx!"
+#print("--")
+#print("New Tx!")

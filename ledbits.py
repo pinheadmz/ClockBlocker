@@ -114,7 +114,7 @@ def cleanup():
 	curses.endwin()
 
 	matrix.Clear()
-	print "bye!"
+	print("bye!")
 atexit.register(cleanup)
 
 # make sure terminal setting is compatible with curses

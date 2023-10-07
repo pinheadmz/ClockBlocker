@@ -94,15 +94,15 @@ def refreshPeers():
 		try:
 			response = urllib2.urlopen(urllib2.Request('https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP, headers=headers))
 		except Exception as e:
-			# print e
+			# print(e)
 			response = False	
 		
 		if response:
-			# print response
+			# print(response)
 			responseJson = json.load(response)	
 			newPeers += 1
 		else:
-			# print "no response"
+			# print("no response")
 			responseJson = False
 		
 		thisPeer['country'] = responseJson['countryName'] if response else ''
@@ -120,6 +120,6 @@ def refreshPeers():
 	return "Peers list refreshed: " + str(newPeers) + " updated, " + str(totalPeers) + " total"
 
 if __name__ == "__main__":
-	print "refreshing..."
+	print("refreshing...")
 	res = refreshPeers()
-	print res
+	print(res)

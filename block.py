@@ -111,6 +111,6 @@ def newBlock():
 # MAIN #
 ########
 #print
-#print "--"
+#print("--")
 newBlock()
 peers.refreshPeers()
