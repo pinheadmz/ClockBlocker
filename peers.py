@@ -6,7 +6,7 @@
 
 import sys
 import os
-import urllib2
+import urllib
 import json
 import bitcoinAuth
 import ipInfoAuth
@@ -40,11 +40,11 @@ def refreshPeers():
     # create directory if missing
     if not os.path.exists(rootdir + '/data'):
       os.makedirs(rootdir + '/data')
-      os.chmod(rootdir + '/data', 0777)
+      os.chmod(rootdir + '/data', 0o777)
     
     p = os.open(peerFile, os.O_CREAT)
     # script will be run both as root and user
-    os.fchmod(p, 0777)
+    os.fchmod(p, 0o777)
     os.close(p)
 
   # open file and read data
@@ -92,7 +92,7 @@ def refreshPeers():
     thisIP = thisPeer['addr'].split(':')[0]
     
     try:
-      response = urllib2.urlopen(urllib2.Request('https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP, headers=headers))
+      response = urllib.urlopen(urllib.Request('https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP, headers=headers))
     except Exception as e:
       # print(e)
       response = False  

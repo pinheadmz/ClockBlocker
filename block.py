@@ -70,11 +70,11 @@ def newBlock():
     # create directory if missing
     if not os.path.exists(rootdir + '/data'):
       os.makedirs(rootdir + '/data')
-      os.chmod(rootdir + '/data', 0777)
+      os.chmod(rootdir + '/data', 0o777)
 
     f = os.open(blockFile, os.O_CREAT)
     # script will be run both as root and user
-    os.fchmod(f, 0777)
+    os.fchmod(f, 0o777)
     os.close(f)
   
   # open file, read data, then close
@@ -103,7 +103,7 @@ def newBlock():
   # swap in new file and close
   tmp.flush()
   os.fsync(tmp.fileno())
-  os.fchmod(tmp.fileno(), 0777)
+  os.fchmod(tmp.fileno(), 0o777)
   tmp.close()
   os.rename(tmpFile, blockFile)
 
