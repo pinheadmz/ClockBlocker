@@ -11,7 +11,7 @@ import json
 import bitcoinAuth
 import ipInfoAuth
 import time
-from bitcoinrpc import AuthServiceProxy, JSONRPCException
+from bitcoinrpc import AuthServiceProxy
 
 
 #############
@@ -41,7 +41,7 @@ def refreshPeers():
     if not os.path.exists(rootdir + '/data'):
       os.makedirs(rootdir + '/data')
       os.chmod(rootdir + '/data', 0o777)
-    
+
     p = os.open(peerFile, os.O_CREAT)
     # script will be run both as root and user
     os.fchmod(p, 0o777)
@@ -54,7 +54,7 @@ def refreshPeers():
     peerDataJson = json.loads(oldPeerData)
   else:
     peerDataJson = json.loads("{}")
-  
+
   # move file pointer back to top
   p.seek(0)
 
@@ -80,40 +80,40 @@ def refreshPeers():
     thisPeer['addr'] = peer['addr']
     thisPeer['inbound'] = peer['inbound']
     thisPeer['subver'] = peer['subver']
-    
+
     # do we need to reload this IP info? Check for per, then check we have its info
     checkForOld = next((item for item in peerDataJson if item["addr"] == thisPeer['addr']), False)
     if checkForOld:
       if ('country' in checkForOld and checkForOld['country']):
         updatedPeers.append(checkForOld)
         continue
-    
+
     # get the location info from IP API
     thisIP = thisPeer['addr'].split(':')[0]
-    
+
     try:
       response = urllib.urlopen(urllib.Request('https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP, headers=headers))
     except Exception as e:
       # print(e)
-      response = False  
-    
+      response = False
+
     if response:
       # print(response)
-      responseJson = json.load(response)  
+      responseJson = json.load(response)
       newPeers += 1
     else:
       # print("no response")
       responseJson = False
-    
+
     thisPeer['country'] = responseJson['countryName'] if response else ''
     thisPeer['region'] = responseJson['regionName'] if response else ''
     thisPeer['city'] = responseJson['cityName'] if response else ''
-    
+
     updatedPeers.append(thisPeer)
     time.sleep(0.5)
-  
+
   # write json of peer info and close
-  peerJson = json.dumps(updatedPeers)  
+  peerJson = json.dumps(updatedPeers)
   p.write(peerJson)
   p.truncate()
   p.close()

@@ -12,7 +12,7 @@ import bitcoinAuth
 import time
 from sys import argv
 from datetime import datetime
-from bitcoinrpc import AuthServiceProxy, JSONRPCException
+from bitcoinrpc import AuthServiceProxy
 
 
 #############
@@ -21,7 +21,7 @@ from bitcoinrpc import AuthServiceProxy, JSONRPCException
 
 rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
-tmpFile =  rootdir + '/data/tmp' + '_time-' + str(int(time.time())) + '_nonce-' + str(int(os.urandom(4).encode('hex'), 16)) + '.txt'
+tmpFile =  rootdir + '/data/tmp' + '_time-' + str(int(time.time())) + '_nonce-' + str(int(os.urandom(4).hex(), 16)) + '.txt'
 
 # amount of blocks to store in file
 BLOCKMAX = 30
@@ -44,7 +44,7 @@ rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332"%(bitcoinAuth.USE
 
 # get info about the new block, all we know is its hash from bitcoind
 # -- TODO: if were creating the file check the block time in the blockchain
-def newBlock():  
+def newBlock():
   # get info from this latest block we just learned about
   blockInfo = rpc_connection.getblock(hash)
   height = str(blockInfo['height'])
@@ -57,14 +57,14 @@ def newBlock():
   txzeroinfo = rpc_connection.getrawtransaction(txzero, 1)
   coinbasehex = txzeroinfo['vin'][0]['coinbase']
   coinbasestring = ""
-  for i in xrange(0, len(coinbasehex)-2, 2):
+  for i in list(range(0, len(coinbasehex)-2, 2)):
     c = coinbasehex[i:i+2]
     cint = int(c, 16)
     if not 126 > cint > 32:
       continue
-    coinbasestring += chr(cint)      
+    coinbasestring += chr(cint)
   block = {"hash":hash, "height":height, "version":version, "size":size, "strippedSize":strippedSize, "time":time, "coinbase":coinbasestring}
-  
+
   # create new file if missing
   if not os.path.isfile(blockFile):
     # create directory if missing
@@ -76,12 +76,12 @@ def newBlock():
     # script will be run both as root and user
     os.fchmod(f, 0o777)
     os.close(f)
-  
+
   # open file, read data, then close
   f = open(blockFile,'r')
   data = f.read()
   f.close()
-  
+
   if data:
     dataJson = json.loads(data)
   else:
@@ -95,11 +95,11 @@ def newBlock():
     key = min(dataJson.keys())
     del dataJson[key]
 
-  # convert back to string and write to TEMP file for atomicity 
+  # convert back to string and write to TEMP file for atomicity
   dataJsonString = json.dumps(dataJson)
   tmp = open(tmpFile,'w')
   tmp.write(dataJsonString)
-  
+
   # swap in new file and close
   tmp.flush()
   os.fsync(tmp.fileno())
