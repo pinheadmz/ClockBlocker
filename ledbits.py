@@ -18,7 +18,6 @@ import random
 import socket
 import bitcoinAuth
 import sys
-import random
 from PIL import Image, ImageDraw, ImageFont
 import peers
 import copy
@@ -581,7 +580,7 @@ def drawMempool(txs):
   maxDots = (MEM_ROWMIN - MEM_ROWMAX + 1) * (MEM_COLMAX - MEM_COLMIN + 1)
 
   # scale down mempool size for viewin
-  num = txs/MEMPOOLSCALE
+  num = txs//MEMPOOLSCALE
 
   for x in range(num):
     # color changes each time we fill up the space
