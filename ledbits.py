@@ -244,13 +244,13 @@ def getUserAgentColor(subver):
 
   return color
   '''
-  hash = hashlib.sha256(subver).hexdigest()
+  hash = hashlib.sha256(bytes(subver, 'ascii')).hexdigest()
   return curses.color_pair((int(hash[10:20], 16) % 7) + 1)
 
 # turn any arbitrary string into a (r, g, b) color via hash
 def stringToColor(s):
   offset = 1
-  hash = hashlib.sha256(s).hexdigest()
+  hash = hashlib.sha256(bytes(s, 'ascii')).hexdigest()
   color = (int(hash[offset:offset+2], 16), int(hash[offset+2:offset+4], 16), int(hash[offset+4:offset+6], 16))
   return color
 
