@@ -6,7 +6,7 @@
 
 import sys
 import os
-import urllib
+import urllib.request as request
 import json
 import bitcoinAuth
 import ipInfoAuth
@@ -92,14 +92,16 @@ def refreshPeers():
     thisIP = thisPeer['addr'].split(':')[0]
 
     try:
-      response = urllib.urlopen(urllib.Request('https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key   + '&format=json&ip=' + thisIP, headers=headers))
+      url = 'https://api.ipinfodb.com/v3/ip-city/?key=' + ipInfoAuth.api_key + '&format=json&ip=' + thisIP
+      req = request.Request(url, headers=headers)
+      response = request.urlopen(req).read().decode()
     except Exception as e:
       # print(e)
       response = False
 
     if response:
       # print(response)
-      responseJson = json.load(response)
+      responseJson = json.loads(response)
       newPeers += 1
     else:
       # print("no response")
