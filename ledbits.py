@@ -948,6 +948,9 @@ while True:
   line = 5
   for peer in peerData:
     line += 1
+
+    if line >= MAXYX[0]-2:
+      break
     # color each line depending on type of node
     color = getUserAgentColor(peer['subver'])
 
