@@ -815,17 +815,17 @@ def showHistory():
 #####################
 
 previousHeight = 0
+numTx = 0
+memBytes = 0
 
 while True:
   # connect to node and get current mem pool size
   try:
     mempoolInfo = rpc_connection.getmempoolinfo()
-  except (socket.error, httplib.CannotSendRequest):
-    printMsg("getmempoolinfo http error", COLOR_RED)
-    time.sleep(2)
-    continue
-  numTx = mempoolInfo['size']
-  memBytes = mempoolInfo['bytes']
+    numTx = mempoolInfo['size']
+    memBytes = mempoolInfo['bytes']
+  except:
+    pass
 
   # load recent block info from file created by blocks.py
   if not os.path.isfile(blockFile):
