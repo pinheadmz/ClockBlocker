@@ -37,6 +37,8 @@ rootdir = sys.path[0]
 blockFile = rootdir + '/data/block_list.txt'
 peerFile =  rootdir + '/data/peer_list.txt'
 txFile =  rootdir + '/data/tx.txt'
+logo = Image.open(rootdir + '/imgs/logo.bmp')
+logo = logo.convert('RGB')
 
 # load font
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
@@ -163,7 +165,7 @@ options.scan_mode=1
 options.gpio_slowdown=2
 options.pwm_lsb_nanoseconds=130
 options.show_refresh_rate=0
-options.hardware_mapping = 'adafruit-hat-pwm'  # If you have an Adafruit HAT: 'adafruit-hat'
+options.hardware_mapping = 'adafruit-hat'  # If you have an Adafruit HAT: 'adafruit-hat'
 matrix = RGBMatrix(options = options)
 
 # this matrix buffers the LED grid output to avoid using clear() every frame
@@ -280,8 +282,7 @@ def checkKeyIn():
     printMsg(res)
     time.sleep(2)
   elif key in ("l", "L"):
-    global LEDGRID
-    LEDGRID = not LEDGRID
+    showLogo()
 
 
 # use curses to output a line (or two) of text towards bottom of the screen
@@ -378,20 +379,23 @@ def deposit():
     time.sleep(2)
     return False
 
+  # smaller QR code
+  addr = addr.upper()
+
   # show off the new address!
   printMsg(addr, COLOR_GREEN, 1)
-  showQR(addr, 'M')
+  showQR(addr, 'L')
 
 
 # called by withdraw() to display segment of a list as a menu
 def withdrawMenu(coins, offset = 0):
   # display 10 coins at a time
-  menuCoins = dict(coins.items()[0 + offset : 10 + offset])
+  menuCoins = list(coins.items())[0 + offset : 10 + offset]
 
   # display menu of coins to withdraw
   stdscr.erase()
-  for i, key in enumerate(menuCoins):
-    s = '%-3.4s%-13.13s%-40.40s' % (str(i) + ":", str(menuCoins[key]), key)
+  for i, tupe in enumerate(menuCoins):
+    s = '%-3.4s%-50.52s%-20.20s' % (str(i) + ":", str(tupe[0]), str(tupe[1]))
     stdscr.addstr(0 + i, 0, s)
   stdscr.addstr(0 + i + 2, 0, "Enter number of key to withdraw, [P]age next, or e[X]it")
   hideCursor()
@@ -414,10 +418,15 @@ def withdrawMenu(coins, offset = 0):
   if choiceChar in (-1, "x", "X"):
     return False
   elif choiceChar in ("p", "P"):
-    offset = offset + 10 if offset + 10 < len(coins) else 0
+    offset = offset + 10 if offset + 10 < len(list(coins.items())) else 0
     withdrawMenu(coins, offset)
   elif isinstance(choiceChar, int) and int(choiceChar) <= len(menuCoins) - 1:
-    chosenAddr = menuCoins.keys()[int(choiceChar)]
+
+    printMsg("Not supported by descriptor wallets", COLOR_RED)
+    time.sleep(2)
+    return False
+
+    chosenAddr = menuCoins[int(choiceChar)][0]
     # allow long string of input:
     curses.nocbreak()
 
@@ -462,25 +471,25 @@ def withdraw():
 
   # connect to node and get all unspent outputs
   try:
-    list = rpc_connection.listunspent(0)
+    coins_list = rpc_connection.listunspent(0)
   except (socket.error, httplib.CannotSendRequest):
     printMsg("listunspent http error", COLOR_RED)
     time.sleep(2)
     return False
 
   # no coins
-  if len(list) == 0:
+  if len(coins_list) == 0:
     printMsg("No unspent outputs!", COLOR_RED)
     time.sleep(2)
     return False
 
   # calculate balances of each spendable key in wallet
   coins = {}
-  for addr in list:
-    if addr['address'] in coins:
-      coins[addr['address']] += addr['amount']
+  for coin in coins_list:
+    if coin["address"] in coins:
+      coins[coin["address"]] += coin["amount"]
     else:
-      coins[addr['address']] = addr['amount']
+      coins[coin["address"]] = coin["amount"]
 
   # send unspent coins list to the recursive paging menu function
   withdrawMenu(coins)
@@ -508,6 +517,12 @@ def showQR(addr, errcorr):
   # give us a chance to scan it
   time.sleep(QRTIME)
 
+
+def showLogo():
+  matrix.Clear()
+  matrix.SetImage(logo.rotate(270 - ROTATE))
+  printMsg("\n\n\n\n\n\n\n\n\n\n\t\t\t;-)", COLOR_GOLD)
+  time.sleep(QRTIME)
 
 # draw blocks since last difficulty adjustment
 def drawDiff(height):
@@ -925,7 +940,7 @@ while True:
     #  stdscr.addstr(line, 0, s, curses.color_pair(color))
 
 
-  menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory  [L]ED Grid"
+  menu = "[D]eposit  [W]ithdraw  [B]alance  [P]arty!  [Q]uit  [R]efresh peers  [H]istory  [L]ogo"
   stdscr.addstr(MAXYX[0]-1, 0, menu)
 
   # our own user agent goes up top

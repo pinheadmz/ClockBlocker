@@ -12,7 +12,6 @@ Raspberry Pi Full Node with 32 x 32 RGB LED network visualizer
 
 Be sure to install the Python bindings as well as the core library: https://github.com/hzeller/rpi-rgb-led-matrix/tree/master/bindings/python
 
-You may also need to solder a jumper on the Adafruit HAT: https://github.com/hzeller/rpi-rgb-led-matrix#improving-flicker
 
 * PyQRCode: https://pypi.python.org/pypi/PyQRCode:
 
@@ -28,19 +27,29 @@ $ sudo apt-get install python-pil
 * Bitcoin Core with the following lines added to `~/.bitcoin/bitcoin.config` (see Installation below, the paths should match):
 
 ```
-blocknotify=python /home/pi/bin/ClockBlocker/block.py %s
-walletnotify=python /home/pi/bin/ClockBlocker/tx.py %s
+blocknotify=python /home/pi/ClockBlocker/block.py %s
+walletnotify=python /home/pi/ClockBlocker/tx.py %s
 ```
 
 ### Installation:
 
-Clone this repository in ~/bin and make easy-to-type command to start clock:
+First, ensure home directory is accesible to root:
+```
+$ chmod 755 /home/pi
+```
 
+Clone this repository in `$HOME` and make easy-to-type command to start clock:
 ```
 $ cd ~
 $ git clone https://github.com/pinheadmz/ClockBlocker.git
 $ sudo ln -s ~/ClockBlocker/ledbits.py /usr/local/bin/ledbits
 $ sudo chmod 777 /usr/local/bin/ledbits
+```
+
+Copy (and modify, if desired) the Bitcoin Core configuration file from this repo:
+```
+$ mkdir ~/.bitcoin
+$ cp ~/ClockBlocker/bitcoin.conf ~/.bitcoin
 ```
 
 ...then from any command line you can start the clock by entering:
@@ -65,6 +74,10 @@ PW = "YOUR-BITCOIN-RPC-PASSWORD"
 ```
 api_key = 'YOUR-API-KEY'
 ```
+
+### Customize Logo:
+
+Replace the file [imgs/logo.bmp](imgs/logo.bmp) with your own 32x32 BMP image!
 
 ### Hardware & Parts:
 
