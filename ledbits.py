@@ -44,7 +44,7 @@ logo = logo.convert('RGB')
 font = ImageFont.load_path( rootdir + '/fonts/pilfonts/timR08.pil')
 
 # % brightness for entire display
-BRIGHTNESS = 40
+BRIGHTNESS = 60
 
 # brightness limits for random colors
 DIM_MAX = 255
@@ -99,7 +99,7 @@ QRTIME = 5
 LEDGRID = True
 
 # rotate grid output: 0, 90, 180, 270
-ROTATE = 0
+ROTATE = 270
 
 ##############
 # initialize #
@@ -521,7 +521,7 @@ def showQR(addr, errcorr):
 def showLogo():
   matrix.Clear()
   matrix.SetImage(logo.rotate(270 - ROTATE))
-  printMsg("\n\n\n\n\n\n\n\n\n\n\t\t\t;-)", COLOR_GOLD)
+  printMsg("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t;-)", COLOR_GOLD)
   time.sleep(QRTIME)
 
 # draw blocks since last difficulty adjustment
