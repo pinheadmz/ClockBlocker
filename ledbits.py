@@ -303,9 +303,9 @@ def printMsg(msg, color=COLOR_WHITE, line=0):
 def showValue(value):
   #get the balance, default
   if value == "balance":
-    wallet = rpc_connection.getwalletinfo()
+    wallet = rpc_connection.getbalances()
     # add in unconfirmed balance for grand total -- so, not 0-conf safe I guess
-    value = str(wallet['balance'] + wallet['unconfirmed_balance'])
+    value = str(wallet['mine']['trusted'] + wallet['mine']['untrusted_pending'])
     color = (50, 255, 50)
     top = 9
   else:
